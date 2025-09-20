@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { X, Tag, ChevronRight, ChevronDown, Trash2, Edit2, Check, PlayCircle } from 'lucide-react';
-import type { Entry } from '../lib/supabase';
+import type { Entry } from '../lib/firebase-client';
 import { supabase } from '../lib/supabase';
 import { toast } from 'react-hot-toast';
 import { extractYouTubeVideoId } from '../lib/metadata';

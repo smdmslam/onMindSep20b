@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react';
 import { toast } from 'react-hot-toast';
 import { supabase } from '../lib/supabase';
-import type { Entry } from '../lib/supabase';
+import type { Entry } from '../lib/firebase-client';
 import { DEFAULT_CATEGORIES } from '../lib/constants';
 
 export function useCategories(entries: Entry[], onEntriesChange: () => void) {

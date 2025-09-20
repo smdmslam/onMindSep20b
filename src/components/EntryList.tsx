@@ -1,5 +1,5 @@
 import React from 'react';
-import type { Entry } from '../lib/supabase';
+import type { Entry } from '../lib/firebase-client';
 import { EntryCard } from './EntryCard';
 import { EntryRow } from './EntryRow';
 import { EntryLine } from './EntryLine';

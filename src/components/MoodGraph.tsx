@@ -1,7 +1,7 @@
 import React from 'react';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts';
 import { format, subDays } from 'date-fns';
-import type { Entry } from '../lib/supabase';
+import type { Entry } from '../lib/firebase-client';
 
 type MoodGraphProps = {
   entries: Entry[];

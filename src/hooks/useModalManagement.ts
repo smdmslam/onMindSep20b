@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import type { Entry } from '../lib/supabase';
+import type { Entry } from '../lib/firebase-client';
 
 export function useModalManagement() {
   const [showCategoryManagement, setShowCategoryManagement] = useState(false);
@@ -7,7 +7,11 @@ export function useModalManagement() {
     show: false,
     entryId: null,
   });
-  const [showSplash, setShowSplash] = useState(true);
+  const [showSplash, setShowSplash] = useState(() => {
+    // Check for splash parameter in URL
+    const urlParams = new URLSearchParams(window.location.search);
+    return urlParams.get('splash') === 'true' ? true : true; // Default behavior
+  });
 
   const handleDelete = (id: string) => {
     setDeleteConfirm({ show: true, entryId: id });

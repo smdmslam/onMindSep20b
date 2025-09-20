@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import type { Entry } from '../lib/supabase';
+import type { Entry } from '../lib/firebase-client';
 
 type EntryMode = 'idea' | 'quick' | 'flash' | 'journal';
 

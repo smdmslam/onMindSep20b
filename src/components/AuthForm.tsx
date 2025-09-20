@@ -158,7 +158,7 @@ export function AuthForm({ onSuccess }: AuthFormProps) {
         </div>
 
         <p className="text-sm text-white/40 mt-6">
-          Version 30Mb video
+          v. 1.09.25
         </p>
       </form>
     </div>

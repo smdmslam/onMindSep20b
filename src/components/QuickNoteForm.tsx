@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { X, Youtube, Loader2, Star, Pin, Globe } from 'lucide-react';
-import type { Entry } from '../lib/supabase';
+import type { Entry } from '../lib/firebase-client';
 import { TagInput } from './TagInput';
 import { fetchUrlMetadata, extractYouTubeVideoId } from '../lib/metadata';
 import { toast } from 'react-hot-toast';

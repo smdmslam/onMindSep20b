@@ -1,4 +1,4 @@
-import type { Entry } from './supabase';
+import type { Entry } from './firebase-client';
 
 export function exportToCSV(entries: Entry[]) {
   // Define CSV headers

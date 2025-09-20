@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import type { Entry } from '../lib/supabase';
+import type { Entry } from '../lib/firebase-client';
 
 type PlaylistState = {
   videos: Entry[];

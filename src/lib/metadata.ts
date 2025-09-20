@@ -35,6 +35,40 @@ export function extractYouTubeVideoId(url: string): string | null {
 }
 
 /**
+ * Extract Vimeo video ID from various Vimeo URL formats
+ */
+export function extractVimeoVideoId(url: string): string | null {
+  if (!url) return null;
+  
+  // Handle various Vimeo URL formats
+  const regexPatterns = [
+    /vimeo\.com\/(\d+)/,
+    /player\.vimeo\.com\/video\/(\d+)/
+  ];
+
+  for (const pattern of regexPatterns) {
+    const match = url.match(pattern);
+    if (match && match[1]) {
+      return match[1];
+    }
+  }
+
+  return null;
+}
+
+/**
+ * Determine video platform from URL
+ */
+export function getVideoPlatform(url: string): 'youtube' | 'vimeo' | 'unknown' {
+  if (!url) return 'unknown';
+  
+  if (extractYouTubeVideoId(url)) return 'youtube';
+  if (extractVimeoVideoId(url)) return 'vimeo';
+  
+  return 'unknown';
+}
+
+/**
  * Fetch metadata from a YouTube video
  */
 export async function fetchYouTubeMetadata(videoId: string): Promise<MetadataResult> {

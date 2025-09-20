@@ -1,6 +1,6 @@
 import React from 'react';
 import { Star, Pin, ExternalLink, Clock, Youtube, ChevronDown, ChevronUp, Pencil, Trash2 } from 'lucide-react';
-import type { Entry } from '../lib/supabase';
+import type { Entry } from '../lib/firebase-client';
 import { formatDate, formatTextWithLinks } from '../lib/utils';
 import { extractYouTubeVideoId } from '../lib/metadata';
 

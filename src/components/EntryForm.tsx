@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { X, Youtube, Loader2, Star, Pin, Tag, RefreshCw, SmilePlus, Smile, Meh, Frown, Frown as FrownPlus, Calendar } from 'lucide-react';
-import type { Entry } from '../lib/supabase';
+import type { Entry } from '../lib/firebase-client';
 import { DEFAULT_CATEGORIES } from '../lib/constants';
 import { TagInput } from './TagInput';
 import { fetchUrlMetadata, extractYouTubeVideoId } from '../lib/metadata';

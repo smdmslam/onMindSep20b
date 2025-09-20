@@ -133,6 +133,14 @@ function App() {
   const [runTour, setRunTour] = useState(false);
   const [showAllEntries, setShowAllEntries] = useState(false);
   const [currentVideo, setCurrentVideo] = useState<Entry | null>(null);
+
+  // Sync currentVideo with playlist changes
+  useEffect(() => {
+    const playlistVideo = getCurrentVideo();
+    if (playlistVideo && playlistVideo !== currentVideo) {
+      setCurrentVideo(playlistVideo);
+    }
+  }, [playlistState?.currentIndex, getCurrentVideo]);
   const [interfacePreferences, setInterfacePreferences] = useState<InterfacePreferences>(() => {
     const savedPreferences = localStorage.getItem('interfacePreferences');
     if (savedPreferences) {

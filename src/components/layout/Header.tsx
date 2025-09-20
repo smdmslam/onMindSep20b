@@ -34,7 +34,7 @@ export function Header({
               <h1 className="text-xl font-semibold text-[#2d9edb] leading-none">
                 On Mind
               </h1>
-              <span className="text-xs text-white/40">Version 30Mb video</span>
+              <span className="text-xs text-white/40">v. 1.09.25</span>
             </div>
           </button>
           <div className="flex items-center gap-1">

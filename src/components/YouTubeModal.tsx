@@ -2,7 +2,7 @@ import React, { useEffect, useCallback, useState, useRef } from 'react';
 import YouTube from 'react-youtube';
 import { X, SkipBack, SkipForward, Pause, Play, Volume2, VolumeX, RefreshCw, Volume1, Volume } from 'lucide-react';
 import { extractYouTubeVideoId } from '../lib/metadata';
-import type { Entry } from '../lib/supabase';
+import type { Entry } from '../lib/firebase-client';
 
 type YouTubeModalProps = {
   url: string;

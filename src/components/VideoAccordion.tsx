@@ -2,8 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { ChevronDown, ChevronUp, Play, SkipBack, SkipForward, Pause, Volume2, VolumeX, RefreshCw, Volume1, Volume } from 'lucide-react';
 import YouTube from 'react-youtube';
 import type { Entry } from '../lib/supabase';
-import { extractYouTubeVideoId } from '../lib/metadata';
+import { extractYouTubeVideoId, extractVimeoVideoId, getVideoPlatform } from '../lib/metadata';
 import { formatTextWithLinks } from '../lib/utils';
+import { VimeoPlayer, VimeoPlayerInstance } from './VimeoPlayer';
+import { VimeoIframe } from './VimeoIframe';
+import { INTRO_VIDEO } from '../lib/constants';
 
 type VideoAccordionProps = {
   currentVideo: Entry | null;
@@ -41,27 +44,63 @@ export function VideoAccordion({
   const [volume, setVolume] = useState(100);
   const [progress, setProgress] = useState(0);
   const [duration, setDuration] = useState(0);
-  const videoId = currentVideo?.url ? extractYouTubeVideoId(currentVideo.url) : null;
+  
+  // Determine which video to show - current video or intro video as fallback
+  const displayVideo = currentVideo || INTRO_VIDEO;
+  const videoUrl = displayVideo.url || '';
+  const videoPlatform = getVideoPlatform(videoUrl);
+  const youtubeVideoId = videoPlatform === 'youtube' ? extractYouTubeVideoId(videoUrl) : null;
+  const vimeoVideoId = videoPlatform === 'vimeo' ? extractVimeoVideoId(videoUrl) : null;
 
-  // Auto-expand when a video is selected
+  // Debug logging (only once per video change)
   useEffect(() => {
-    if (currentVideo) {
+    console.log('VideoAccordion Debug:', {
+      showingIntroVideo: !currentVideo,
+      videoUrl,
+      videoPlatform,
+      youtubeVideoId,
+      vimeoVideoId,
+      displayVideo: displayVideo.title,
+      playlist: !!playlist,
+      playlistLength: playlist?.length || 0,
+      currentIndex
+    });
+  }, [currentVideo?.id, playlist?.length, currentIndex]);
+
+  // Auto-expand when a video is selected or show intro by default
+  useEffect(() => {
+    if (currentVideo || displayVideo) {
       setIsExpanded(true);
     }
-  }, [currentVideo]);
+  }, [currentVideo, displayVideo]);
 
   useEffect(() => {
     let progressInterval: NodeJS.Timeout;
     if (player && isPlaying) {
-      progressInterval = setInterval(() => {
-        const currentTime = player.getCurrentTime();
-        const videoDuration = player.getDuration();
-        setProgress((currentTime / videoDuration) * 100);
-        setDuration(videoDuration);
+      progressInterval = setInterval(async () => {
+        try {
+          let currentTime = 0;
+          let videoDuration = 0;
+
+          if (videoPlatform === 'youtube') {
+            currentTime = player.getCurrentTime();
+            videoDuration = player.getDuration();
+          } else if (videoPlatform === 'vimeo') {
+            currentTime = await player.getCurrentTime();
+            videoDuration = await player.getDuration();
+          }
+
+          if (videoDuration > 0) {
+            setProgress((currentTime / videoDuration) * 100);
+            setDuration(videoDuration);
+          }
+        } catch (error) {
+          console.error('Error updating progress:', error);
+        }
       }, 1000);
     }
     return () => clearInterval(progressInterval);
-  }, [player, isPlaying]);
+  }, [player, isPlaying, videoPlatform]);
 
   const handleToggle = () => {
     setIsExpanded(!isExpanded);
@@ -71,56 +110,166 @@ export function VideoAccordion({
   };
 
   const handleReady = (event: any) => {
-    setPlayer(event.target);
-    setDuration(event.target.getDuration());
+    console.log('🎬 Player ready!', {
+      platform: videoPlatform,
+      event: !!event,
+      target: !!event?.target,
+      videoId: youtubeVideoId || vimeoVideoId
+    });
+    
+    // For YouTube, the player is event.target, not the event itself
+    const playerInstance = event.target;
+    setPlayer(playerInstance);
+    
+    // Set initial duration based on platform
+    if (videoPlatform === 'youtube') {
+      setDuration(playerInstance.getDuration());
+    } else if (videoPlatform === 'vimeo') {
+      playerInstance.getDuration().then((duration: number) => {
+        setDuration(duration);
+      });
+    }
   };
 
   const handleStateChange = (event: any) => {
-    if (event.data === 0 && onNextVideo) {
+    // YouTube specific state change
+    console.log('YouTube player state change:', event.data);
+    
+    // Handle different player states
+    switch (event.data) {
+      case -1: // unstarted
+        console.log('YouTube player: unstarted');
+        break;
+      case 0: // ended
+        console.log('YouTube player: ended');
+        if (onNextVideo) {
+          onNextVideo();
+        }
+        break;
+      case 1: // playing
+        console.log('YouTube player: playing');
+        setIsPlaying(true);
+        break;
+      case 2: // paused
+        console.log('YouTube player: paused');
+        setIsPlaying(false);
+        break;
+      case 3: // buffering
+        console.log('YouTube player: buffering');
+        break;
+      case 5: // video cued
+        console.log('YouTube player: video cued');
+        break;
+    }
+  };
+
+  const handleVimeoPlay = () => {
+    setIsPlaying(true);
+  };
+
+  const handleVimeoPause = () => {
+    setIsPlaying(false);
+  };
+
+  const handleVimeoEnd = () => {
+    if (onNextVideo) {
       onNextVideo();
     }
-    setIsPlaying(event.data === 1);
   };
 
-  const handlePlayPause = () => {
-    if (player) {
-      if (isPlaying) {
-        player.pauseVideo();
-      } else {
-        player.playVideo();
+  const handlePlayPause = async () => {
+    console.log('🎮 Play/Pause button clicked!', {
+      hasPlayer: !!player,
+      isPlaying,
+      videoPlatform,
+      youtubeVideoId,
+      vimeoVideoId
+    });
+    
+    if (!player) {
+      console.error('❌ No player instance available');
+      return;
+    }
+
+    try {
+      if (videoPlatform === 'youtube') {
+        console.log('🎬 YouTube player control:', isPlaying ? 'PAUSING' : 'PLAYING');
+        if (isPlaying) {
+          player.pauseVideo();
+        } else {
+          player.playVideo();
+        }
+      } else if (videoPlatform === 'vimeo') {
+        console.log('🎬 Vimeo player control:', isPlaying ? 'PAUSING' : 'PLAYING');
+        if (isPlaying) {
+          await player.pause();
+        } else {
+          await player.play();
+        }
       }
+    } catch (error) {
+      console.error('❌ Error controlling playback:', error);
     }
   };
 
-  const handleToggleMute = () => {
-    if (player) {
-      if (isMuted) {
-        player.unMute();
-        player.setVolume(volume);
-      } else {
-        player.mute();
+  const handleToggleMute = async () => {
+    if (!player) return;
+
+    try {
+      if (videoPlatform === 'youtube') {
+        if (isMuted) {
+          player.unMute();
+          player.setVolume(volume);
+        } else {
+          player.mute();
+        }
+      } else if (videoPlatform === 'vimeo') {
+        if (isMuted) {
+          await player.setVolume(volume / 100);
+        } else {
+          await player.setVolume(0);
+        }
       }
       setIsMuted(!isMuted);
+    } catch (error) {
+      console.error('Error toggling mute:', error);
     }
   };
 
-  const handleVolumeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleVolumeChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const newVolume = parseInt(e.target.value, 10);
+    
     if (player) {
-      player.setVolume(newVolume);
-      if (isMuted && newVolume > 0) {
-        player.unMute();
-        setIsMuted(false);
+      try {
+        if (videoPlatform === 'youtube') {
+          player.setVolume(newVolume);
+          if (isMuted && newVolume > 0) {
+            player.unMute();
+            setIsMuted(false);
+          }
+        } else if (videoPlatform === 'vimeo') {
+          await player.setVolume(newVolume / 100);
+          if (isMuted && newVolume > 0) {
+            setIsMuted(false);
+          }
+        }
+      } catch (error) {
+        console.error('Error changing volume:', error);
       }
     }
     setVolume(newVolume);
   };
 
   const handleReload = () => {
-    if (player) {
-      const currentTime = player.getCurrentTime();
-      player.loadVideoById(videoId, currentTime);
+    if (player && videoPlatform === 'youtube' && youtubeVideoId) {
+      try {
+        const currentTime = player.getCurrentTime();
+        player.loadVideoById(youtubeVideoId, currentTime);
+      } catch (error) {
+        console.error('Error reloading video:', error);
+      }
     }
+    // Vimeo doesn't have a direct reload method, would need to recreate the player
   };
 
   const getVolumeIcon = () => {
@@ -141,36 +290,8 @@ export function VideoAccordion({
     return null;
   }
 
-  if (!currentVideo) {
-    return (
-      <div className="bg-[#1a1a1a]/50 border border-white/10 rounded-xl mb-6 overflow-hidden">
-        <div className="flex items-center justify-between p-4">
-          <button
-            onClick={handleToggle}
-            className="flex items-center gap-2 hover:text-white transition-colors"
-          >
-            <Play size={20} className="text-white/60" />
-            <span className="text-white/60">On Mind Video Player</span>
-          </button>
-          <button
-            onClick={handleToggle}
-            className="p-1.5 text-white/60 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
-          >
-            {isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-          </button>
-        </div>
-        
-        {isExpanded && (
-          <div className="p-12 text-center text-white/60 border-t border-white/10">
-            <div className="w-12 h-12 bg-white/5 rounded-full flex items-center justify-center mx-auto mb-4">
-              <Play size={24} />
-            </div>
-            <p>Click Video Play icons in Tags and Saved Entries to start watching</p>
-          </div>
-        )}
-      </div>
-    );
-  }
+  // Always show the video player (with intro video as fallback)
+  const showingIntroVideo = !currentVideo;
 
   return (
     <div className="bg-[#1a1a1a]/50 border border-white/10 rounded-xl mb-6 overflow-hidden">
@@ -179,9 +300,11 @@ export function VideoAccordion({
           onClick={handleToggle}
           className="flex items-center gap-2 hover:text-white transition-colors"
         >
-          <Play size={20} className="text-[#2d9edb]" />
-          <span className="text-white">
-            {playlist ? (
+          <Play size={20} className={showingIntroVideo ? "text-white/60" : "text-[#2d9edb]"} />
+          <span className={showingIntroVideo ? "text-white/60" : "text-white"}>
+            {showingIntroVideo ? (
+              "On Mind Video Player - App Introduction"
+            ) : playlist ? (
               <>
                 Playing {currentIndex + 1} of {playlist.length}
                 {playlist[currentIndex]?.tags.length > 0 && (
@@ -191,7 +314,7 @@ export function VideoAccordion({
                 )}
               </>
             ) : (
-              currentVideo.title
+              displayVideo.title
             )}
           </span>
         </button>
@@ -205,15 +328,15 @@ export function VideoAccordion({
 
       <div className={`transition-all duration-300 ${isExpanded ? 'max-h-[800px]' : 'max-h-0'} overflow-hidden`}>
         <div className="relative pt-[56.25%] bg-black">
-          {videoId && (
+          {youtubeVideoId && (
             <YouTube
-              videoId={videoId}
+              videoId={youtubeVideoId}
               className="absolute inset-0"
               opts={{
                 width: '100%',
                 height: '100%',
                 playerVars: {
-                  autoplay: 1,
+                  autoplay: showingIntroVideo ? 0 : 1, // Don't autoplay intro video
                   modestbranding: 1,
                   rel: 0,
                   controls: 0,
@@ -224,6 +347,32 @@ export function VideoAccordion({
               onReady={handleReady}
               onStateChange={handleStateChange}
             />
+          )}
+          {vimeoVideoId && (
+            <VimeoIframe
+              videoId={vimeoVideoId}
+              autoplay={!showingIntroVideo} // Don't autoplay intro video
+              loop={showingIntroVideo} // Loop the intro video
+              muted={false}
+              controls={false}
+            />
+          )}
+          {/* Fallback for when no video platform is detected */}
+          {!youtubeVideoId && !vimeoVideoId && videoUrl && (
+            <div className="absolute inset-0 flex items-center justify-center bg-black/50">
+              <div className="text-white/60 text-center">
+                <p>Unsupported video platform</p>
+                <p className="text-sm mt-2">{videoUrl}</p>
+                <a 
+                  href={videoUrl} 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="text-[#2d9edb] hover:underline text-sm mt-2 block"
+                >
+                  Open video in new tab
+                </a>
+              </div>
+            </div>
           )}
         </div>
 
@@ -244,7 +393,17 @@ export function VideoAccordion({
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               <button
-                onClick={onPreviousVideo}
+                onClick={() => {
+                  console.log('⏮️ Previous button clicked!', {
+                    hasFunction: !!onPreviousVideo,
+                    playlist: !!playlist,
+                    currentIndex,
+                    playlistLength: playlist?.length || 0
+                  });
+                  if (onPreviousVideo) {
+                    onPreviousVideo();
+                  }
+                }}
                 disabled={!onPreviousVideo}
                 className="p-2 text-white/60 hover:text-white hover:bg-white/10 rounded-lg transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
                 title="Previous video (Left Arrow)"
@@ -253,7 +412,10 @@ export function VideoAccordion({
               </button>
               
               <button
-                onClick={handlePlayPause}
+                onClick={() => {
+                  console.log('🔥 BUTTON CLICKED - This should always show!');
+                  handlePlayPause();
+                }}
                 className="p-2 text-white/60 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
                 title="Play/Pause (Space)"
               >
@@ -261,7 +423,17 @@ export function VideoAccordion({
               </button>
               
               <button
-                onClick={onNextVideo}
+                onClick={() => {
+                  console.log('⏭️ Next button clicked!', {
+                    hasFunction: !!onNextVideo,
+                    playlist: !!playlist,
+                    currentIndex,
+                    playlistLength: playlist?.length || 0
+                  });
+                  if (onNextVideo) {
+                    onNextVideo();
+                  }
+                }}
                 disabled={!onNextVideo}
                 className="p-2 text-white/60 hover:text-white hover:bg-white/10 rounded-lg transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
                 title="Next video (Right Arrow)"
@@ -309,11 +481,18 @@ export function VideoAccordion({
           {/* Video Title and Description */}
           <div className="pt-2 border-t border-white/10">
             <h3 className="text-lg text-white font-medium mb-2">
-              {currentVideo.title}
+              {displayVideo.title}
             </h3>
-            {currentVideo.explanation && (
+            {displayVideo.explanation && (
               <div className="text-sm text-white/60">
-                {formatTextWithLinks(currentVideo.explanation)}
+                {formatTextWithLinks(displayVideo.explanation)}
+              </div>
+            )}
+            {showingIntroVideo && (
+              <div className="mt-3 p-3 bg-[#2d9edb]/10 border border-[#2d9edb]/20 rounded-lg">
+                <p className="text-sm text-[#2d9edb]">
+                  👋 Welcome! This is your introduction to On Mind. Click play to learn about all the features available to you.
+                </p>
               </div>
             )}
           </div>

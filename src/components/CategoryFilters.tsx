@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { Tag, Edit2, Trash2, Check, X, Plus } from 'lucide-react';
 import { toast } from 'react-hot-toast';
-import type { Entry } from '../lib/supabase';
+import type { Entry } from '../lib/firebase-client';
 import { DEFAULT_CATEGORIES } from '../lib/constants';
 
 type CategoryFiltersProps = {

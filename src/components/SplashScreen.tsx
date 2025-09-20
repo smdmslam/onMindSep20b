@@ -9,6 +9,15 @@ export function SplashScreen({ onFinished, minDuration = 1500 }: SplashScreenPro
   const [opacity, setOpacity] = useState(1);
   
   useEffect(() => {
+    // Check if we should stay on splash screen
+    const urlParams = new URLSearchParams(window.location.search);
+    const stayOnSplash = urlParams.get('splash') === 'true';
+    
+    if (stayOnSplash) {
+      // Don't auto-dismiss when splash=true in URL
+      return;
+    }
+    
     const timer = setTimeout(() => {
       // Start fade out animation
       setOpacity(0);
@@ -20,13 +29,25 @@ export function SplashScreen({ onFinished, minDuration = 1500 }: SplashScreenPro
     return () => clearTimeout(timer);
   }, [minDuration, onFinished]);
   
+  const handleClick = () => {
+    // Allow click to dismiss when in development mode
+    const urlParams = new URLSearchParams(window.location.search);
+    const stayOnSplash = urlParams.get('splash') === 'true';
+    
+    if (stayOnSplash) {
+      setOpacity(0);
+      setTimeout(onFinished, 500);
+    }
+  };
+  
   return (
     <div 
-      className="fixed inset-0 z-50 flex items-center justify-center bg-gradient-to-br from-[#2d1b69] to-[#1a1a1a]"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-gradient-to-br from-[#2d1b69] to-[#1a1a1a] cursor-pointer"
       style={{ 
         opacity, 
         transition: 'opacity 500ms ease-in-out'
       }}
+      onClick={handleClick}
     >
       <div className="text-center">
         <div className="w-24 h-24 bg-gradient-to-br from-[#2d9edb] to-[#2d9edb]/70 rounded-2xl flex items-center justify-center mb-6 mx-auto shadow-lg">
@@ -40,7 +61,7 @@ export function SplashScreen({ onFinished, minDuration = 1500 }: SplashScreenPro
           and YouTube companion
         </p>
         <p className="text-sm text-white/40 mt-2 text-center">
-          Version 30Mb video
+          v. 1.09.25
         </p>
         
         <div className="mt-8">

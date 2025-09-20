@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import type { Entry } from '../lib/supabase';
+import type { Entry } from '../lib/firebase-client';
 
 export function useEntryFiltering(
   entries: Entry[],

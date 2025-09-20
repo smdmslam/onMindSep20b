@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { format, subDays } from 'date-fns';
-import type { Entry } from '../lib/supabase';
+import type { Entry } from '../lib/firebase-client';
 import { SmilePlus, Smile, Meh, Frown, Frown as FrownPlus } from 'lucide-react';
 import { MoodGraph } from './MoodGraph';
 

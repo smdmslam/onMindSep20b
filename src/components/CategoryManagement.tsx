@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, Trash2, AlertTriangle, Youtube, FileText, Lightbulb, BookOpen, Book, Eye, EyeOff, Key, UserCircle, Download, Trash } from 'lucide-react';
 import { DEFAULT_CATEGORIES } from '../lib/constants';
-import type { Entry } from '../lib/supabase';
+import type { Entry } from '../lib/firebase-client';
 import { supabase } from '../lib/supabase';
 import { toast } from 'react-hot-toast';
 import { exportToCSV, generateCSVTemplate } from '../lib/csv';

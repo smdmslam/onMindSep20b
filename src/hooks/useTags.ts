@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react';
 import { toast } from 'react-hot-toast';
 import { supabase } from '../lib/supabase';
-import type { Entry } from '../lib/supabase';
+import type { Entry } from '../lib/firebase-client';
 
 export function useTags(entries: Entry[], onEntriesChange: () => void) {
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
