@@ -12,6 +12,21 @@ dist
 dist-ssr
 *.local
 
+# Environment variables and sensitive data
+.env
+.env.local
+.env.development
+.env.production
+firebase-service-account.json
+
+# Firebase and migration data
+firebase-service-account-template.json
+db_cluster-*.backup
+db_cluster-*.backup.gz
+entries_export.json
+users_export.json
+migration_summary.json
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
@@ -22,3 +37,6 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Supabase (legacy)
+.supabase
