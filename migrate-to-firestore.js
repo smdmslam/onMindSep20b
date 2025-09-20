@@ -1,9 +1,9 @@
-const admin = require('firebase-admin');
-const fs = require('fs');
+import admin from 'firebase-admin';
+import fs from 'fs';
 
 // Initialize Firebase Admin SDK
 // You'll need to download the service account key and place it here
-const serviceAccount = require('./firebase-service-account.json');
+const serviceAccount = JSON.parse(fs.readFileSync('./firebase-service-account.json', 'utf8'));
 
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),
@@ -61,15 +61,30 @@ async function migrateToFirestore() {
         const createdAt = admin.firestore.Timestamp.fromDate(new Date(entry.created_at));
         const updatedAt = admin.firestore.Timestamp.fromDate(new Date(entry.updated_at));
 
+        // Parse tags from PostgreSQL array format
+        let tags = [];
+        if (Array.isArray(entry.tags)) {
+          tags = entry.tags;
+        } else if (typeof entry.tags === 'string') {
+          if (entry.tags.startsWith('{') && entry.tags.endsWith('}')) {
+            // PostgreSQL array format: "{tag1,tag2,tag3}"
+            const tagString = entry.tags.slice(1, -1); // Remove { and }
+            if (tagString.trim()) {
+              tags = tagString.split(',').map(tag => tag.trim());
+            }
+          } else if (entry.tags.trim()) {
+            // Single tag or comma-separated
+            tags = entry.tags.split(',').map(tag => tag.trim());
+          }
+        }
+
         const entryDoc = {
           user_id: userMap.get(entry.user_id), // Reference to user document
           title: entry.title,
           content: entry.content,
           explanation: entry.explanation,
           category: entry.category,
-          tags: Array.isArray(entry.tags) ? entry.tags : 
-                (typeof entry.tags === 'string' && entry.tags.startsWith('{')) ? 
-                JSON.parse(entry.tags.replace(/'/g, '"')) : [],
+          tags: tags,
           is_favorite: entry.is_favorite,
           is_pinned: entry.is_pinned,
           is_flashcard: entry.is_flashcard,

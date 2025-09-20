@@ -1,8 +1,23 @@
 import React from 'react';
 import { format } from 'date-fns';
+import { Timestamp } from 'firebase/firestore';
 
-export function formatDate(dateString: string): string {
-  const date = new Date(dateString);
+export function formatDate(dateInput: string | Timestamp): string {
+  let date: Date;
+  
+  if (dateInput instanceof Timestamp) {
+    // Convert Firebase Timestamp to JavaScript Date
+    date = dateInput.toDate();
+  } else {
+    // Handle string input (legacy)
+    date = new Date(dateInput);
+  }
+  
+  // Check if the date is valid
+  if (isNaN(date.getTime())) {
+    return 'Invalid date';
+  }
+  
   return format(date, 'MMM d, h:mm a');
 }
 

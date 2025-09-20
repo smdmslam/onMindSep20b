@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Toaster, toast } from 'react-hot-toast';
 import Joyride, { CallBackProps, STATUS } from 'react-joyride';
-import { type Entry, type AuthUser, signOut, onAuthStateChange } from './lib/firebase-client';
+import { type Entry, type AuthUser, signOut, onAuthStateChange, getEntries, createEntry } from './lib/firebase-client';
 import { TagFilters } from './components/TagFilters';
 import { CategoryFilters } from './components/CategoryFilters';
 import { ConfirmDialog } from './components/ConfirmDialog';
@@ -208,15 +208,16 @@ function App() {
 
   const createGettingStartedEntry = async (userId: string) => {
     try {
-      const { data: existingEntries, error: fetchError } = await supabase
-        .from('entries')
-        .select('*')
-        .eq('title', 'Getting Started with On Mind')
-        .eq('user_id', userId);
-
+      // Check if getting started entry already exists
+      const { data: existingEntries, error: fetchError } = await getEntries();
+      
       if (fetchError) throw fetchError;
 
-      if (!existingEntries || existingEntries.length === 0) {
+      const hasGettingStarted = existingEntries?.some(entry => 
+        entry.title === 'Getting Started with On Mind'
+      );
+
+      if (!hasGettingStarted) {
         const gettingStartedEntry = {
           title: "Getting Started with On Mind",
           content: "Welcome to On Mind! Here's how to get started:\n\n1. Add entries using the + button\n2. Quick notes can be added with the note icon\n3. Organize with categories and tags\n4. Use the search bar to find entries\n5. Toggle between different views (card, row, line)\n6. Star important entries and pin them to the top",

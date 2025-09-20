@@ -97,9 +97,20 @@ export async function signOut() {
 }
 
 // Entry management functions
-export async function getEntries(userId: string) {
+export async function getEntries(userId?: string) {
   try {
-    const userRef = doc(db, 'users', userId);
+    const currentUser = auth.currentUser;
+    if (!currentUser && !userId) {
+      return { data: [], error: null };
+    }
+    
+    // Use the current user's UID directly (since all entries are now mapped to Google Auth)
+    const targetUserId = userId || currentUser?.uid;
+    if (!targetUserId) {
+      return { data: [], error: null };
+    }
+    
+    const userRef = doc(db, 'users', targetUserId);
     const q = query(
       collection(db, 'entries'),
       where('user_id', '==', userRef),
@@ -120,8 +131,17 @@ export async function getEntries(userId: string) {
 
 export async function createEntry(entry: Omit<Entry, 'id' | 'created_at' | 'updated_at'>) {
   try {
+    // Use the current user's UID directly (since all entries are now mapped to Google Auth)
+    const currentUser = auth.currentUser;
+    if (!currentUser) {
+      return { data: null, error: new Error('User not authenticated') };
+    }
+    
+    const userRef = doc(db, 'users', currentUser.uid);
+    
     const entryData = {
       ...entry,
+      user_id: userRef,
       created_at: Timestamp.now(),
       updated_at: Timestamp.now()
     };

@@ -1,4 +1,5 @@
-const admin = require('firebase-admin');
+import admin from 'firebase-admin';
+import fs from 'fs';
 
 // This is a simple test script to verify Firestore connection
 // Run this after setting up your service account key
@@ -8,7 +9,7 @@ async function testFirestoreConnection() {
     console.log('🔍 Testing Firestore connection...');
     
     // Initialize Firebase Admin SDK
-    const serviceAccount = require('./firebase-service-account.json');
+    const serviceAccount = JSON.parse(fs.readFileSync('./firebase-service-account.json', 'utf8'));
     
     admin.initializeApp({
       credential: admin.credential.cert(serviceAccount),
