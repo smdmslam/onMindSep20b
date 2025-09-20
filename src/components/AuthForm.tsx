@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { signIn, signUp, signInWithGoogle } from '../lib/supabase';
+import { signIn, signUp, signInWithGoogle } from '../lib/firebase-client';
 import { toast } from 'react-hot-toast';
 
 type AuthFormProps = {

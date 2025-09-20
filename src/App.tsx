@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Toaster, toast } from 'react-hot-toast';
 import Joyride, { CallBackProps, STATUS } from 'react-joyride';
-import { supabase, type Entry, type AuthUser, signOut } from './lib/supabase';
+import { type Entry, type AuthUser, signOut, onAuthStateChange } from './lib/firebase-client';
 import { TagFilters } from './components/TagFilters';
 import { CategoryFilters } from './components/CategoryFilters';
 import { ConfirmDialog } from './components/ConfirmDialog';
@@ -237,19 +237,11 @@ function App() {
   };
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      const newUser = session?.user ?? null;
-      setUser(newUser);
-      if (newUser) {
-        createGettingStartedEntry(newUser.id);
-        fetchEntries();
-      }
-    });
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      const newUser = session?.user ?? null;
-      setUser(newUser);
-      if (newUser) {
+    // Firebase handles auth state automatically through onAuthStateChange
+    const unsubscribe = onAuthStateChange((_event, user) => {
+      setUser(user);
+      if (user) {
+        createGettingStartedEntry(user.id);
         fetchEntries();
       }
     });
@@ -260,7 +252,7 @@ function App() {
       setRunTour(true);
     }
 
-    return () => subscription.unsubscribe();
+    return () => unsubscribe();
   }, [fetchEntries]);
 
   const handleJoyrideCallback = (data: CallBackProps) => {

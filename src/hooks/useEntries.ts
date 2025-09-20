@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import { toast } from 'react-hot-toast';
-import { supabase, type Entry } from '../lib/supabase';
+import { type Entry, getEntries, createEntry, updateEntry, deleteEntry } from '../lib/firebase-client';
 
 export function useEntries() {
   const [entries, setEntries] = useState<Entry[]>([]);
@@ -8,19 +8,10 @@ export function useEntries() {
 
   const fetchEntries = useCallback(async () => {
     try {
-      const session = await supabase.auth.getSession();
-      if (!session.data.session) {
-        throw new Error('No active session');
-      }
-
-      const { data, error } = await supabase
-        .from('entries')
-        .select('*')
-        .order('is_pinned', { ascending: false })
-        .order('created_at', { ascending: false });
-
+      const { data, error } = await getEntries();
+      
       if (error) {
-        console.error('Supabase error:', error);
+        console.error('Firebase error:', error);
         throw error;
       }
 
@@ -33,11 +24,9 @@ export function useEntries() {
     }
   }, []);
 
-  const createEntry = async (data: Partial<Entry>) => {
+  const addEntry = async (data: Partial<Entry>) => {
     try {
-      const { error } = await supabase
-        .from('entries')
-        .insert([data]);
+      const { error } = await createEntry(data);
 
       if (error) throw error;
       toast.success('Entry created successfully');
@@ -50,12 +39,9 @@ export function useEntries() {
     }
   };
 
-  const updateEntry = async (id: string, data: Partial<Entry>) => {
+  const modifyEntry = async (id: string, data: Partial<Entry>) => {
     try {
-      const { error } = await supabase
-        .from('entries')
-        .update(data)
-        .eq('id', id);
+      const { error } = await updateEntry(id, data);
 
       if (error) throw error;
       toast.success('Entry updated successfully');
@@ -68,12 +54,9 @@ export function useEntries() {
     }
   };
 
-  const deleteEntry = async (id: string) => {
+  const removeEntry = async (id: string) => {
     try {
-      const { error } = await supabase
-        .from('entries')
-        .delete()
-        .eq('id', id);
+      const { error } = await deleteEntry(id);
 
       if (error) throw error;
       toast.success('Entry deleted successfully');
@@ -88,10 +71,7 @@ export function useEntries() {
 
   const toggleFavorite = async (id: string, isFavorite: boolean) => {
     try {
-      const { error } = await supabase
-        .from('entries')
-        .update({ is_favorite: isFavorite })
-        .eq('id', id);
+      const { error } = await updateEntry(id, { is_favorite: isFavorite });
 
       if (error) throw error;
       await fetchEntries();
@@ -105,10 +85,7 @@ export function useEntries() {
 
   const togglePin = async (id: string, isPinned: boolean) => {
     try {
-      const { error } = await supabase
-        .from('entries')
-        .update({ is_pinned: isPinned })
-        .eq('id', id);
+      const { error } = await updateEntry(id, { is_pinned: isPinned });
 
       if (error) throw error;
       await fetchEntries();
@@ -124,9 +101,9 @@ export function useEntries() {
     entries,
     loading,
     fetchEntries,
-    createEntry,
-    updateEntry,
-    deleteEntry,
+    createEntry: addEntry,
+    updateEntry: modifyEntry,
+    deleteEntry: removeEntry,
     toggleFavorite,
     togglePin
   };
