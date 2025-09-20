@@ -16,7 +16,7 @@ export const INTRO_VIDEO = {
   title: 'Welcome to On Mind',
   content: 'This is your personal knowledge base and YouTube companion. Watch this introduction to learn how to make the most of On Mind.',
   explanation: 'A quick walkthrough of On Mind\'s features and capabilities. Perfect for getting started with your personal knowledge management journey.',
-  url: 'https://vimeo.com/1120444357',
+  url: 'https://vimeo.com/1120485703',
   category: 'Introduction',
   tags: ['introduction', 'tutorial', 'getting-started'],
   is_favorite: false,
