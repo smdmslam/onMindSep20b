@@ -58,3 +58,4 @@ After deployment, update your Firebase OAuth settings:
 ## 🔄 Continuous Deployment
 
 Once connected, every push to `main` branch will automatically deploy to Vercel.
+

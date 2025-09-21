@@ -605,6 +605,7 @@ function App() {
         existingCategories={existingCategories}
         entries={entries}
         onDeleteCategory={deleteCategory}
+        onRefreshData={fetchEntries}
         youtubeSettings={youtubeSettings}
         onUpdateYoutubeSettings={handleUpdateYoutubeSettings}
         interfacePreferences={interfacePreferences}

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Plus, Trash2, AlertTriangle, Youtube, FileText, Lightbulb, BookOpen, Book, Eye, EyeOff, Key, UserCircle, Download, Trash } from 'lucide-react';
 import { DEFAULT_CATEGORIES } from '../lib/constants';
 import type { Entry } from '../lib/firebase-client';
-import { supabase } from '../lib/supabase';
+import { createEntry, auth } from '../lib/firebase-client';
 import { toast } from 'react-hot-toast';
 import { exportToCSV, generateCSVTemplate } from '../lib/csv';
 import { MoodTracking } from './MoodTracking';
@@ -13,6 +13,7 @@ type CategoryManagementProps = {
   existingCategories: string[];
   entries: Entry[];
   onDeleteCategory: (category: string, newCategory: string) => Promise<void>;
+  onRefreshData: () => void;
   youtubeSettings: {
     autoAddChannelAsTag: boolean;
   };
@@ -43,6 +44,7 @@ export function CategoryManagement({
   existingCategories,
   entries,
   onDeleteCategory,
+  onRefreshData,
   youtubeSettings,
   onUpdateYoutubeSettings,
   interfacePreferences,
@@ -71,15 +73,12 @@ export function CategoryManagement({
 
   useEffect(() => {
     const fetchAccountInfo = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
+      const user = auth.currentUser;
       if (user) {
-        const { data: sessions } = await supabase.auth.getSession();
         setAccountInfo({
           email: user.email || '',
-          createdAt: new Date(user.created_at).toLocaleString(),
-          lastSignIn: sessions?.session?.created_at 
-            ? new Date(sessions.session.created_at).toLocaleString()
-            : 'Never'
+          createdAt: user.metadata.creationTime ? new Date(user.metadata.creationTime).toLocaleString() : 'Unknown',
+          lastSignIn: user.metadata.lastSignInTime ? new Date(user.metadata.lastSignInTime).toLocaleString() : 'Never'
         });
       }
     };
@@ -118,24 +117,29 @@ export function CategoryManagement({
 
     try {
       // Create a placeholder entry with the new category
-      const { error } = await supabase
-        .from('entries')
-        .insert([{
-          title: `${newCategory} Category Created`,
-          content: `This is a placeholder entry for the new category "${newCategory}".`,
-          category: newCategory,
-          tags: ['system'],
-          user_id: (await supabase.auth.getUser()).data.user?.id
-        }]);
+      const result = await createEntry({
+        title: `${newCategory} Category Created`,
+        content: `This is a placeholder entry for the new category "${newCategory}".`,
+        category: newCategory,
+        tags: ['system'],
+        is_favorite: false,
+        is_pinned: false,
+        is_flashcard: false,
+        explanation: null
+      });
 
-      if (error) throw error;
+      if (result.error) {
+        throw result.error;
+      }
 
       toast.success(`Category "${newCategory}" created successfully`);
       setNewCategory('');
       setIsAddingCategory(false);
       
-      // Close the settings modal to trigger a refresh
-      onClose();
+      // Refresh the data immediately to show the new category
+      onRefreshData();
+      
+      // Keep the modal open so user can continue managing categories
     } catch (error) {
       console.error('Error creating category:', error);
       toast.error('Failed to create category');

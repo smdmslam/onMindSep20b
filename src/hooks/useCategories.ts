@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import { toast } from 'react-hot-toast';
-import { supabase } from '../lib/supabase';
+import { createEntry, auth } from '../lib/firebase-client';
 import type { Entry } from '../lib/firebase-client';
 import { DEFAULT_CATEGORIES } from '../lib/constants';
 
@@ -77,15 +77,16 @@ export function useCategories(entries: Entry[], onEntriesChange: () => void) {
       }
 
       // Create a minimal entry to establish the category
-      const { error } = await supabase
-        .from('entries')
-        .insert([{
-          title: 'Category Created',
-          content: ' ',
-          category: newCategory,
-          tags: ['system'],
-          user_id: (await supabase.auth.getUser()).data.user?.id
-        }]);
+      const { error } = await createEntry({
+        title: 'Category Created',
+        content: ' ',
+        category: newCategory,
+        tags: ['system'],
+        is_favorite: false,
+        is_pinned: false,
+        is_flashcard: false,
+        explanation: null
+      });
 
       if (error) throw error;
 
