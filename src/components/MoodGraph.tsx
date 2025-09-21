@@ -2,6 +2,7 @@ import React from 'react';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts';
 import { format, subDays } from 'date-fns';
 import type { Entry } from '../lib/firebase-client';
+import { Timestamp } from 'firebase/firestore';
 
 type MoodGraphProps = {
   entries: Entry[];
@@ -14,6 +15,14 @@ const MOOD_VALUES = {
   'mood:anxious': { value: 3, color: '#F4A261' },
   'mood:sad': { value: 2, color: '#4A4E69' },
   'mood:angry': { value: 1, color: '#D7263D' },
+};
+
+// Helper function to convert Firebase Timestamp to Date
+const toDate = (timestamp: Timestamp | string): Date => {
+  if (timestamp instanceof Timestamp) {
+    return timestamp.toDate();
+  }
+  return new Date(timestamp);
 };
 
 export function MoodGraph({ entries, days = 10 }: MoodGraphProps) {
@@ -34,7 +43,7 @@ export function MoodGraph({ entries, days = 10 }: MoodGraphProps) {
     
     // Group mood values by date
     entries.forEach(entry => {
-      const date = format(new Date(entry.created_at), 'MMM d');
+      const date = format(toDate(entry.created_at), 'MMM d');
       const moodTag = entry.tags.find(tag => tag.startsWith('mood:'));
       if (moodTag && MOOD_VALUES[moodTag as keyof typeof MOOD_VALUES]) {
         const { value, color } = MOOD_VALUES[moodTag as keyof typeof MOOD_VALUES];

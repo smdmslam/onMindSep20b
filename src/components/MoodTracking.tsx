@@ -3,6 +3,7 @@ import { format, subDays } from 'date-fns';
 import type { Entry } from '../lib/firebase-client';
 import { SmilePlus, Smile, Meh, Frown, Frown as FrownPlus } from 'lucide-react';
 import { MoodGraph } from './MoodGraph';
+import { Timestamp } from 'firebase/firestore';
 
 // Define the mood values and icons
 const MOOD_CONFIG = {
@@ -20,12 +21,20 @@ type DayEntry = {
   entries: Entry[];
 };
 
+// Helper function to convert Firebase Timestamp to Date
+const toDate = (timestamp: Timestamp | string): Date => {
+  if (timestamp instanceof Timestamp) {
+    return timestamp.toDate();
+  }
+  return new Date(timestamp);
+};
+
 export function MoodTracking({ entries }: { entries: Entry[] }) {
   // Filter entries to only include those with mood tags and within last 10 days
   const moodEntries = useMemo(() => {
     const tenDaysAgo = subDays(new Date(), 9).setHours(0, 0, 0, 0);
     return entries.filter(entry => {
-      const entryDate = new Date(entry.created_at).getTime();
+      const entryDate = toDate(entry.created_at).getTime();
       return entryDate >= tenDaysAgo && entry.tags?.some(tag => tag.startsWith('mood:'));
     });
   }, [entries]);
@@ -39,9 +48,9 @@ export function MoodTracking({ entries }: { entries: Entry[] }) {
 
     return dateRange.map(date => {
       const dayEntries = entries.filter(entry => {
-        const entryDate = format(new Date(entry.created_at), 'yyyy-MM-dd');
+        const entryDate = format(toDate(entry.created_at), 'yyyy-MM-dd');
         return entryDate === date && entry.tags?.some(tag => tag.startsWith('mood:'));
-      }).sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+      }).sort((a, b) => toDate(b.created_at).getTime() - toDate(a.created_at).getTime());
 
       return { date, entries: dayEntries };
     });
@@ -83,7 +92,7 @@ export function MoodTracking({ entries }: { entries: Entry[] }) {
                         {Icon && <Icon size={14} className={moodConfig.color} />}
                       </div>
                       <span className="text-xs text-white/60">
-                        {format(new Date(entry.created_at), 'h:mm a')}
+                        {format(toDate(entry.created_at), 'h:mm a')}
                       </span>
                       <span className="text-xs text-white/80 max-w-[200px] truncate">
                         {entry.content.split('\n')[0]}
