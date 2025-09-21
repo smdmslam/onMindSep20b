@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import { toast } from 'react-hot-toast';
-import { createEntry, auth } from '../lib/firebase-client';
+import { createEntry, updateEntry, auth } from '../lib/firebase-client';
 import type { Entry } from '../lib/firebase-client';
 import { DEFAULT_CATEGORIES } from '../lib/constants';
 
@@ -19,40 +19,20 @@ export function useCategories(entries: Entry[], onEntriesChange: () => void) {
 
   const deleteCategory = useCallback(async (categoryToDelete: string, replacementCategory: string) => {
     try {
-      // First, get all entries with the category to delete
-      const { data: entriesToUpdate, error: fetchError } = await supabase
-        .from('entries')
-        .select('id')
-        .eq('category', categoryToDelete);
+      // Find all entries with the category to delete
+      const entriesToUpdate = entries.filter(entry => 
+        entry.category === categoryToDelete || 
+        entry.category.match(/^\(\d+\)$/) || // numeric categories
+        entry.category === 'Code Vault'
+      );
 
-      if (fetchError) throw fetchError;
-
-      if (entriesToUpdate && entriesToUpdate.length > 0) {
-        // Update all entries with this category in a single query
-        const { error: updateError } = await supabase
-          .from('entries')
-          .update({ category: replacementCategory })
-          .in('id', entriesToUpdate.map(entry => entry.id));
-        
-        if (updateError) throw updateError;
+      if (entriesToUpdate.length > 0) {
+        // Update all entries with this category using Firebase
+        for (const entry of entriesToUpdate) {
+          const { error } = await updateEntry(entry.id, { category: replacementCategory });
+          if (error) throw error;
+        }
       }
-
-      // Clean up any entries with numeric categories or Code Vault category
-      // Using separate queries for each condition to avoid complex OR logic
-      const { error: numericCleanupError } = await supabase
-        .from('entries')
-        .update({ category: replacementCategory })
-        .like('category', '(%)')
-        .not('category', 'ilike', '%(created)%');
-
-      if (numericCleanupError) throw numericCleanupError;
-
-      const { error: codeVaultCleanupError } = await supabase
-        .from('entries')
-        .update({ category: replacementCategory })
-        .eq('category', 'Code Vault');
-
-      if (codeVaultCleanupError) throw codeVaultCleanupError;
       
       // Update selected category if needed
       if (selectedCategory === categoryToDelete) {
@@ -67,7 +47,7 @@ export function useCategories(entries: Entry[], onEntriesChange: () => void) {
       toast.error('Failed to delete category');
       return false;
     }
-  }, [selectedCategory, onEntriesChange]);
+  }, [entries, selectedCategory, onEntriesChange]);
 
   const addCategory = useCallback(async (newCategory: string) => {
     try {
@@ -112,22 +92,15 @@ export function useCategories(entries: Entry[], onEntriesChange: () => void) {
         return false;
       }
 
-      // First, get all entries with the old category
-      const { data: entriesToUpdate, error: fetchError } = await supabase
-        .from('entries')
-        .select('id')
-        .eq('category', oldCategory);
+      // Find all entries with the old category
+      const entriesToUpdate = entries.filter(entry => entry.category === oldCategory);
 
-      if (fetchError) throw fetchError;
-
-      if (entriesToUpdate && entriesToUpdate.length > 0) {
-        // Update all entries with this category in a single query
-        const { error: updateError } = await supabase
-          .from('entries')
-          .update({ category: newCategory })
-          .in('id', entriesToUpdate.map(entry => entry.id));
-        
-        if (updateError) throw updateError;
+      if (entriesToUpdate.length > 0) {
+        // Update all entries with this category using Firebase
+        for (const entry of entriesToUpdate) {
+          const { error } = await updateEntry(entry.id, { category: newCategory });
+          if (error) throw error;
+        }
       }
       
       // Update selected category if needed

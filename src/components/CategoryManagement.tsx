@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Trash2, AlertTriangle, Youtube, FileText, Lightbulb, BookOpen, Book, Eye, EyeOff, Key, UserCircle, Download, Trash } from 'lucide-react';
+import { Plus, Trash2, AlertTriangle, Youtube, FileText, Lightbulb, BookOpen, Book, Eye, EyeOff, Key, UserCircle, Download, Trash, Edit } from 'lucide-react';
 import { DEFAULT_CATEGORIES } from '../lib/constants';
 import type { Entry } from '../lib/firebase-client';
 import { createEntry, auth } from '../lib/firebase-client';
@@ -24,6 +24,7 @@ type CategoryManagementProps = {
     showFlashCards: boolean;
     showYouTube: boolean;
     showJournal: boolean;
+    showNote: boolean;
     showCategories: boolean;
     showTags: boolean;
   };
@@ -33,6 +34,7 @@ type CategoryManagementProps = {
     showFlashCards: boolean;
     showYouTube: boolean;
     showJournal: boolean;
+    showNote: boolean;
     showCategories: boolean;
     showTags: boolean;
   }) => void;
@@ -156,8 +158,8 @@ export function CategoryManagement({
       await onDeleteCategory(categoryToDelete, replacementCategory);
       setCategoryToDelete(null);
       
-      // Close the settings modal to trigger a refresh
-      onClose();
+      // Refresh data but keep the modal open for continued category management
+      onRefreshData();
     } catch (error) {
       console.error('Error deleting category:', error);
       toast.error('Failed to delete category');
@@ -385,6 +387,27 @@ export function CategoryManagement({
                 <div className="flex items-center justify-between p-3 bg-white/5 rounded-lg hover:bg-white/10 transition-colors">
                   <div className="flex items-center gap-3">
                     <div className="p-2 bg-[#2d9edb]/20 rounded-lg">
+                      <Lightbulb size={20} className="text-[#2d9edb]" />
+                    </div>
+                    <div>
+                      <h4 className="text-sm font-medium text-white">Ideas</h4>
+                      <p className="text-xs text-white/60">Enable idea capture functionality</p>
+                    </div>
+                  </div>
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={interfacePreferences.showIdeas}
+                      onChange={() => handleInterfacePreferenceChange('showIdeas')}
+                      className="sr-only peer"
+                    />
+                    <div className="w-11 h-6 bg-white/10 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#2d9edb]"></div>
+                  </label>
+                </div>
+
+                <div className="flex items-center justify-between p-3 bg-white/5 rounded-lg hover:bg-white/10 transition-colors">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-[#2d9edb]/20 rounded-lg">
                       <FileText size={20} className="text-[#2d9edb]" />
                     </div>
                     <div>
@@ -397,6 +420,27 @@ export function CategoryManagement({
                       type="checkbox"
                       checked={interfacePreferences.showQuickNotes}
                       onChange={() => handleInterfacePreferenceChange('showQuickNotes')}
+                      className="sr-only peer"
+                    />
+                    <div className="w-11 h-6 bg-white/10 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#2d9edb]"></div>
+                  </label>
+                </div>
+
+                <div className="flex items-center justify-between p-3 bg-white/5 rounded-lg hover:bg-white/10 transition-colors">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-[#2d9edb]/20 rounded-lg">
+                      <Edit size={20} className="text-[#2d9edb]" />
+                    </div>
+                    <div>
+                      <h4 className="text-sm font-medium text-white">Note</h4>
+                      <p className="text-xs text-white/60">Enable note taking with category selection</p>
+                    </div>
+                  </div>
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={interfacePreferences.showNote}
+                      onChange={() => handleInterfacePreferenceChange('showNote')}
                       className="sr-only peer"
                     />
                     <div className="w-11 h-6 bg-white/10 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#2d9edb]"></div>
@@ -427,33 +471,12 @@ export function CategoryManagement({
                 <div className="flex items-center justify-between p-3 bg-white/5 rounded-lg hover:bg-white/10 transition-colors">
                   <div className="flex items-center gap-3">
                     <div className="p-2 bg-[#2d9edb]/20 rounded-lg">
-                      <Lightbulb size={20} className="text-[#2d9edb]" />
-                    </div>
-                    <div>
-                      <h4 className="text-sm font-medium text-white">Ideas</h4>
-                      <p className="text-xs text-white/60">Enable idea capture functionality</p>
-                    </div>
-                  </div>
-                  <label className="relative inline-flex items-center cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={interfacePreferences.showIdeas}
-                      onChange={() => handleInterfacePreferenceChange('showIdeas')}
-                      className="sr-only peer"
-                    />
-                    <div className="w-11 h-6 bg-white/10 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#2d9edb]"></div>
-                  </label>
-                </div>
-
-                <div className="flex items-center justify-between p-3 bg-white/5 rounded-lg hover:bg-white/10 transition-colors">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 bg-[#2d9edb]/20 rounded-lg">
                       <BookOpen size={20} className="text-[#2d9edb]" />
                     </div>
                     <div>
                       <h4 className="text-sm font-medium text-white">Flash Cards</h4>
                       <p className="text-xs text-white/60">Enable flash card learning system</p>
-                      <p className="text-xs text-white/40 mt-1">Note: Maximum 3 buttons allowed between Quick Notes, Ideas, Journal, and Flash Cards</p>
+                      <p className="text-xs text-white/40 mt-1">Note: Maximum 3 buttons allowed between Ideas, Quick Notes, Note, Journal, and Flash Cards</p>
                     </div>
                   </div>
                   <label className="relative inline-flex items-center cursor-pointer">

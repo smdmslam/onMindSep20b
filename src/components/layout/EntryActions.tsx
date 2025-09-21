@@ -1,9 +1,10 @@
 import React from 'react';
-import { Lightbulb, FileText, BookOpen, Eye, Book } from 'lucide-react';
+import { Lightbulb, FileText, BookOpen, Eye, Book, Edit } from 'lucide-react';
 
 type EntryActionsProps = {
   onCreateIdea: () => void;
   onCreateQuickNote: () => void;
+  onCreateNote: () => void;
   onCreateFlashCard: () => void;
   onCreateJournal: () => void;
   showAllEntries: boolean;
@@ -14,12 +15,14 @@ type EntryActionsProps = {
     showFlashCards: boolean;
     showYouTube: boolean;
     showJournal: boolean;
+    showNote: boolean;
   };
 };
 
 export function EntryActions({
   onCreateIdea,
   onCreateQuickNote,
+  onCreateNote,
   onCreateFlashCard,
   onCreateJournal,
   showAllEntries,
@@ -29,7 +32,8 @@ export function EntryActions({
     showIdeas: true,
     showFlashCards: true,
     showYouTube: true,
-    showJournal: true
+    showJournal: true,
+    showNote: false
   }
 }: EntryActionsProps) {
   return (
@@ -51,6 +55,16 @@ export function EntryActions({
         >
           <FileText size={20} />
           <span className="hidden sm:inline">Quick Note</span>
+        </button>
+      )}
+
+      {interfacePreferences.showNote && (
+        <button
+          onClick={onCreateNote}
+          className="flex items-center justify-center gap-2 px-4 py-2.5 bg-[#2d9edb]/20 text-[#2d9edb] rounded-xl hover:bg-[#2d9edb]/30 transition-colors"
+        >
+          <Edit size={20} />
+          <span className="hidden sm:inline">Note</span>
         </button>
       )}
 

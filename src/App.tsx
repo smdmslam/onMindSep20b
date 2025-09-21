@@ -25,6 +25,7 @@ import { SearchBar } from './components/SearchBar';
 import { AuthView } from './components/AuthView';
 import { EntryForm } from './components/EntryForm';
 import { QuickNoteForm } from './components/QuickNoteForm';
+import { NoteForm } from './components/NoteForm';
 import { IdeaForm } from './components/IdeaForm';
 import { JournalForm } from './components/JournalForm';
 
@@ -40,6 +41,7 @@ type InterfacePreferences = {
   showFlashCards: boolean;
   showYouTube: boolean;
   showJournal: boolean;
+  showNote: boolean;
   showCategories: boolean;
   showTags: boolean;
 };
@@ -97,12 +99,14 @@ function App() {
   const {
     showForm,
     showQuickNote,
+    showNoteForm,
     showIdeaForm,
     showJournalForm,
     editingEntry,
     entryMode,
     handleCreateIdea,
     handleCreateQuickNote,
+    handleCreateNote,
     handleCreateJournal,
     handleCreateFlashCard,
     handleEditEntry,
@@ -148,6 +152,7 @@ function App() {
       return {
         ...parsed,
         showFlashCards: false,
+        showNote: parsed.showNote ?? false,
         showCategories: parsed.showCategories ?? true,
         showTags: parsed.showTags ?? true
       };
@@ -158,6 +163,7 @@ function App() {
       showFlashCards: false,
       showYouTube: true,
       showJournal: true,
+      showNote: false,
       showCategories: true,
       showTags: true
     };
@@ -476,6 +482,7 @@ function App() {
               <EntryActions
                 onCreateIdea={handleCreateIdea}
                 onCreateQuickNote={handleCreateQuickNote}
+                onCreateNote={handleCreateNote}
                 onCreateFlashCard={handleCreateFlashCard}
                 onCreateJournal={handleCreateJournal}
                 showAllEntries={showAllEntries}
@@ -547,6 +554,17 @@ function App() {
             <QuickNoteForm
               onSubmit={handleSubmit}
               onCancel={handleCloseForm}
+              existingTags={existingTags}
+            />
+          </div>
+        )}
+
+        {showNoteForm && (
+          <div className="mb-6">
+            <NoteForm
+              onSubmit={handleSubmit}
+              onCancel={handleCloseForm}
+              existingCategories={existingCategories}
               existingTags={existingTags}
             />
           </div>
