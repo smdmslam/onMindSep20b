@@ -554,7 +554,9 @@ function App() {
             <QuickNoteForm
               onSubmit={handleSubmit}
               onCancel={handleCloseForm}
+              existingCategories={existingCategories}
               existingTags={existingTags}
+              entry={editingEntry}
             />
           </div>
         )}
@@ -566,6 +568,7 @@ function App() {
               onCancel={handleCloseForm}
               existingCategories={existingCategories}
               existingTags={existingTags}
+              entry={editingEntry}
             />
           </div>
         )}
@@ -575,7 +578,9 @@ function App() {
             <IdeaForm
               onSubmit={handleSubmit}
               onCancel={handleCloseForm}
+              existingCategories={existingCategories}
               existingTags={existingTags}
+              entry={editingEntry}
             />
           </div>
         )}
@@ -585,7 +590,9 @@ function App() {
             <JournalForm
               onSubmit={handleSubmit}
               onCancel={handleCloseForm}
+              existingCategories={existingCategories}
               existingTags={existingTags}
+              entry={editingEntry}
             />
           </div>
         )}

@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { X, Youtube, Loader2, Star, Pin, Globe } from 'lucide-react';
 import type { Entry } from '../lib/firebase-client';
 import { TagInput } from './TagInput';
@@ -9,7 +9,9 @@ import { DEFAULT_CATEGORIES } from '../lib/constants';
 type QuickNoteFormProps = {
   onSubmit: (data: Partial<Entry>) => void;
   onCancel: () => void;
+  existingCategories: string[];
   existingTags: string[];
+  entry?: Entry;
   youtubeSettings?: {
     autoAddChannelAsTag: boolean;
   };
@@ -18,13 +20,17 @@ type QuickNoteFormProps = {
 export function QuickNoteForm({ 
   onSubmit, 
   onCancel, 
+  existingCategories,
   existingTags,
+  entry,
   youtubeSettings = { autoAddChannelAsTag: true }
 }: QuickNoteFormProps) {
   const [formData, setFormData] = useState({
     title: '',
     content: '',
     url: '',
+    category: 'Quick Note',
+    explanation: '',
     tags: 'Quick Note', // Initialize with Quick Note tag
     is_favorite: false,
     is_pinned: false
@@ -35,9 +41,34 @@ export function QuickNoteForm({
   const [lastProcessedUrl, setLastProcessedUrl] = useState('');
   const [isYouTubeUrl, setIsYouTubeUrl] = useState(false);
   const [channelName, setChannelName] = useState<string | null>(null);
+  const [showAdvancedFields, setShowAdvancedFields] = useState(false);
 
   // Find the YouTube category from DEFAULT_CATEGORIES to ensure consistent casing
   const youTubeCategory = DEFAULT_CATEGORIES.find(cat => cat.toLowerCase() === 'youtube') || 'YouTube';
+  
+  // Combine default and custom categories
+  const allCategories = Array.from(new Set([...DEFAULT_CATEGORIES, ...existingCategories])).sort();
+
+  // Initialize form with entry data when editing
+  useEffect(() => {
+    if (entry) {
+      setFormData({
+        title: entry.title,
+        content: entry.content,
+        url: entry.url || '',
+        category: entry.category,
+        explanation: entry.explanation || '',
+        tags: entry.tags.filter(tag => tag !== 'Quick Note').join(', '), // Remove Quick Note tag for display
+        is_favorite: entry.is_favorite,
+        is_pinned: entry.is_pinned
+      });
+      
+      // Show advanced fields if entry has non-default category or explanation
+      if (entry.category !== 'Quick Note' || entry.explanation) {
+        setShowAdvancedFields(true);
+      }
+    }
+  }, [entry]);
 
   // Check if URL is YouTube when it changes
   useEffect(() => {
@@ -142,7 +173,8 @@ export function QuickNoteForm({
       title: submissionData.title,
       content: submissionData.content || ' ', // Provide a space if content is empty
       url: submissionData.url,
-      category: fetchMetadata && isYouTubeUrl ? youTubeCategory : 'Quick Note', // Use YouTube category if auto-fill is enabled
+      category: fetchMetadata && isYouTubeUrl ? youTubeCategory : submissionData.category, // Use YouTube category if auto-fill is enabled, otherwise use selected category
+      explanation: submissionData.explanation || null,
       tags: tags,
       is_favorite: submissionData.is_favorite,
       is_pinned: submissionData.is_pinned,
@@ -182,13 +214,23 @@ export function QuickNoteForm({
             </button>
           </div>
         </div>
-        <button
-          type="button"
-          onClick={onCancel}
-          className="p-1.5 text-white/60 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
-        >
-          <X size={18} />
-        </button>
+        <div className="flex items-center gap-1">
+          <button
+            type="button"
+            onClick={() => setShowAdvancedFields(!showAdvancedFields)}
+            className="px-2 py-1 text-xs text-white/60 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
+            title={showAdvancedFields ? "Hide advanced fields" : "Show advanced fields"}
+          >
+            {showAdvancedFields ? 'Show Less' : 'Show More'}
+          </button>
+          <button
+            type="button"
+            onClick={onCancel}
+            className="p-1.5 text-white/60 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
+          >
+            <X size={18} />
+          </button>
+        </div>
       </div>
       
       <div className="mb-3">
@@ -211,6 +253,41 @@ export function QuickNoteForm({
           rows={3}
         />
       </div>
+
+      {/* Advanced Fields - Category and Explanation */}
+      {showAdvancedFields && (
+        <>
+          <div className="mb-3">
+            <label className="block text-sm font-medium text-white/60 mb-1">
+              Category
+            </label>
+            <select
+              value={formData.category}
+              onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+              className="w-full px-3 py-2 bg-black/30 border border-white/10 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-[#2d9edb]/50"
+            >
+              {allCategories.map((category) => (
+                <option key={category} value={category}>
+                  {category}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="mb-3">
+            <label className="block text-sm font-medium text-white/60 mb-1">
+              Explanation (optional)
+            </label>
+            <textarea
+              value={formData.explanation}
+              onChange={(e) => setFormData({ ...formData, explanation: e.target.value })}
+              className="w-full px-3 py-2 bg-black/30 border border-white/10 rounded-lg text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-[#2d9edb]/50 resize-none"
+              placeholder="Additional explanation or notes"
+              rows={2}
+            />
+          </div>
+        </>
+      )}
 
       <div className="mb-3">
         <div className="flex gap-2">
@@ -287,7 +364,7 @@ export function QuickNoteForm({
       <div className="mb-4">
         <TagInput
           value={formData.tags}
-          onChange={(value) => setFormData({ ...formData, tags: value })}
+          onChange={(value) => setFormData({ ...formData, tags: Array.isArray(value) ? value.join(', ') : value })}
           existingTags={existingTags}
         />
         <p className="mt-1 text-xs text-white/40">

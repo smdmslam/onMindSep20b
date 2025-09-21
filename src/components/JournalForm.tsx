@@ -2,28 +2,37 @@ import React, { useState, useEffect } from 'react';
 import { X, Star, Pin, Tag, RefreshCw, SmilePlus, Smile, Meh, Frown, Frown as FrownPlus } from 'lucide-react';
 import type { Entry } from '../lib/firebase-client';
 import { TagInput } from './TagInput';
+import { Timestamp } from 'firebase/firestore';
+import { DEFAULT_CATEGORIES } from '../lib/constants';
 
 type Mood = 'joyful' | 'calm' | 'anxious' | 'sad' | 'angry';
 
 type JournalFormProps = {
   onSubmit: (data: Partial<Entry>) => void;
   onCancel: () => void;
+  existingCategories: string[];
   existingTags: string[];
   entry?: Entry;
 };
 
-export function JournalForm({ onSubmit, onCancel, existingTags, entry }: JournalFormProps) {
+export function JournalForm({ onSubmit, onCancel, existingCategories, existingTags, entry }: JournalFormProps) {
   const [formData, setFormData] = useState({
     title: '',
     content: '',
+    category: 'Journal',
+    explanation: '',
     tags: 'Journal',
     is_favorite: false,
     is_pinned: false,
     mood: '' as Mood,
     customDate: new Date().toISOString().slice(0, 16) // Format: YYYY-MM-DDThh:mm
   });
+  const [showAdvancedFields, setShowAdvancedFields] = useState(false);
 
   const [currentPrompt, setCurrentPrompt] = useState<string | null>(null);
+
+  // Combine default and custom categories
+  const allCategories = Array.from(new Set([...DEFAULT_CATEGORIES, ...existingCategories])).sort();
 
   // Journal prompts to inspire writing
   const journalPrompts = [
@@ -55,15 +64,27 @@ export function JournalForm({ onSubmit, onCancel, existingTags, entry }: Journal
       // If there's no comma-separated tags, just use 'Journal'
       const finalTags = tags || 'Journal';
 
+      // Convert Firebase Timestamp to Date
+      const entryDate = entry.created_at instanceof Timestamp 
+        ? entry.created_at.toDate() 
+        : new Date(entry.created_at);
+
       setFormData({
         title: entry.title,
         content,
+        category: entry.category,
+        explanation: entry.explanation || '',
         tags: finalTags,
         is_favorite: entry.is_favorite,
         is_pinned: entry.is_pinned,
         mood,
-        customDate: new Date(entry.created_at).toISOString().slice(0, 16)
+        customDate: entryDate.toISOString().slice(0, 16)
       });
+      
+      // Show advanced fields if entry has non-default category or explanation
+      if (entry.category !== 'Journal' || entry.explanation) {
+        setShowAdvancedFields(true);
+      }
     }
 
     // Get random prompt
@@ -117,7 +138,8 @@ export function JournalForm({ onSubmit, onCancel, existingTags, entry }: Journal
     onSubmit({
       title: formData.title || new Date(formData.customDate).toLocaleDateString(),
       content: fullContent || ' ',
-      category: 'Journal',
+      category: formData.category,
+      explanation: formData.explanation || null,
       tags: tags,
       is_favorite: formData.is_favorite,
       is_pinned: formData.is_pinned,
@@ -172,13 +194,23 @@ export function JournalForm({ onSubmit, onCancel, existingTags, entry }: Journal
             </button>
           </div>
         </div>
-        <button
-          type="button"
-          onClick={onCancel}
-          className="p-1.5 text-white/60 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
-        >
-          <X size={18} />
-        </button>
+        <div className="flex items-center gap-1">
+          <button
+            type="button"
+            onClick={() => setShowAdvancedFields(!showAdvancedFields)}
+            className="px-2 py-1 text-xs text-white/60 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
+            title={showAdvancedFields ? "Hide advanced fields" : "Show advanced fields"}
+          >
+            {showAdvancedFields ? 'Show Less' : 'Show More'}
+          </button>
+          <button
+            type="button"
+            onClick={onCancel}
+            className="p-1.5 text-white/60 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
+          >
+            <X size={18} />
+          </button>
+        </div>
       </div>
 
       <div className="mb-4">
@@ -290,6 +322,41 @@ export function JournalForm({ onSubmit, onCancel, existingTags, entry }: Journal
           Tags (optional, comma-separated). "Journal" tag will be automatically added.
         </p>
       </div>
+
+      {/* Advanced Fields - Category and Explanation */}
+      {showAdvancedFields && (
+        <>
+          <div className="mb-3">
+            <label className="block text-sm font-medium text-white/60 mb-1">
+              Category
+            </label>
+            <select
+              value={formData.category}
+              onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+              className="w-full px-3 py-2 bg-black/30 border border-white/10 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-[#2d9edb]/50"
+            >
+              {allCategories.map((category) => (
+                <option key={category} value={category}>
+                  {category}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="mb-3">
+            <label className="block text-sm font-medium text-white/60 mb-1">
+              Explanation (optional)
+            </label>
+            <textarea
+              value={formData.explanation}
+              onChange={(e) => setFormData({ ...formData, explanation: e.target.value })}
+              className="w-full px-3 py-2 bg-black/30 border border-white/10 rounded-lg text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-[#2d9edb]/50 resize-none"
+              placeholder="Additional explanation or notes"
+              rows={2}
+            />
+          </div>
+        </>
+      )}
 
       <div className="flex justify-end gap-2">
         <button

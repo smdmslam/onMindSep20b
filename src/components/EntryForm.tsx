@@ -5,6 +5,7 @@ import { DEFAULT_CATEGORIES } from '../lib/constants';
 import { TagInput } from './TagInput';
 import { fetchUrlMetadata, extractYouTubeVideoId } from '../lib/metadata';
 import { toast } from 'react-hot-toast';
+import { Timestamp } from 'firebase/firestore';
 
 type EntryFormProps = {
   entry?: Entry;
@@ -100,7 +101,9 @@ export function EntryForm({
         category: entry.category,
         tags: entry.tags.filter(tag => !tag.startsWith('mood:')), // Remove mood tag
         mood,
-        customDate: new Date(entry.created_at).toISOString().slice(0, 16)
+        customDate: (entry.created_at instanceof Timestamp 
+          ? entry.created_at.toDate() 
+          : new Date(entry.created_at)).toISOString().slice(0, 16)
       });
     }
 
