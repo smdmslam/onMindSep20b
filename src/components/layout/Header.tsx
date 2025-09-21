@@ -1,6 +1,6 @@
 import React from 'react';
 import { LogOut, HelpCircle, Settings } from 'lucide-react';
-import type { AuthUser } from '../../lib/supabase';
+import type { AuthUser } from '../../lib/firebase-client';
 
 type HeaderProps = {
   user: AuthUser | null;

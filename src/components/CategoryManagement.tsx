@@ -239,14 +239,15 @@ export function CategoryManagement({
         };
       });
 
-      // Create entries in Supabase
+      // Create entries in Firebase
       for (const entry of entries) {
-        const { error } = await supabase
-          .from('entries')
-          .insert([{
-            ...entry,
-            user_id: (await supabase.auth.getUser()).data.user?.id
-          }]);
+        const { error } = await createEntry({
+          ...entry,
+          is_favorite: entry.is_favorite || false,
+          is_pinned: entry.is_pinned || false,
+          is_flashcard: entry.is_flashcard || false,
+          explanation: entry.explanation || null
+        });
         
         if (error) throw error;
       }
@@ -273,19 +274,8 @@ export function CategoryManagement({
     }
 
     try {
-      const { error } = await supabase.auth.updateUser({
-        password: passwordForm.newPassword
-      });
-
-      if (error) throw error;
-
-      toast.success('Password updated successfully');
-      setIsChangingPassword(false);
-      setPasswordForm({
-        currentPassword: '',
-        newPassword: '',
-        confirmPassword: ''
-      });
+      // TODO: Implement Firebase password change
+      toast.error('Password change not yet implemented for Firebase');
     } catch (error) {
       console.error('Error changing password:', error);
       toast.error('Failed to change password');
@@ -299,24 +289,8 @@ export function CategoryManagement({
     }
 
     try {
-      // Delete all user's entries
-      const { error: deleteEntriesError } = await supabase
-        .from('entries')
-        .delete()
-        .eq('user_id', (await supabase.auth.getUser()).data.user?.id);
-
-      if (deleteEntriesError) throw deleteEntriesError;
-
-      // Delete user account
-      const { error: deleteUserError } = await supabase.auth.admin.deleteUser(
-        (await supabase.auth.getUser()).data.user?.id || ''
-      );
-
-      if (deleteUserError) throw deleteUserError;
-
-      toast.success('Account deleted successfully');
-      await supabase.auth.signOut();
-      window.location.reload();
+      // TODO: Implement Firebase account deletion
+      toast.error('Account deletion not yet implemented for Firebase');
     } catch (error) {
       console.error('Error deleting account:', error);
       toast.error('Failed to delete account');

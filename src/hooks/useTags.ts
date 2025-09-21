@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import { toast } from 'react-hot-toast';
-import { supabase } from '../lib/supabase';
+import { updateEntry } from '../lib/firebase-client';
 import type { Entry } from '../lib/firebase-client';
 
 export function useTags(entries: Entry[], onEntriesChange: () => void) {
@@ -28,10 +28,7 @@ export function useTags(entries: Entry[], onEntriesChange: () => void) {
         for (const entry of entriesToUpdate) {
           const updatedTags = entry.tags.filter(tag => tag !== tagToDelete);
           
-          const { error } = await supabase
-            .from('entries')
-            .update({ tags: updatedTags })
-            .eq('id', entry.id);
+          const { error } = await updateEntry(entry.id, { tags: updatedTags });
           
           if (error) throw error;
         }

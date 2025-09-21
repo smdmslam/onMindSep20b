@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { ChevronDown, ChevronUp, Play, SkipBack, SkipForward, Pause, Volume2, VolumeX, RefreshCw, Volume1, Volume } from 'lucide-react';
 import YouTube from 'react-youtube';
-import type { Entry } from '../lib/supabase';
+import type { Entry } from '../lib/firebase-client';
 import { extractYouTubeVideoId, extractVimeoVideoId, getVideoPlatform } from '../lib/metadata';
 import { formatTextWithLinks } from '../lib/utils';
 import { VimeoPlayer, VimeoPlayerInstance } from './VimeoPlayer';

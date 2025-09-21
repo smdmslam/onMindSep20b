@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { X, Tag, ChevronRight, ChevronDown, Trash2, Edit2, Check, PlayCircle } from 'lucide-react';
 import type { Entry } from '../lib/firebase-client';
-import { supabase } from '../lib/supabase';
+import { updateEntry } from '../lib/firebase-client';
 import { toast } from 'react-hot-toast';
 import { extractYouTubeVideoId } from '../lib/metadata';
 
@@ -175,10 +175,7 @@ export function TagFilters({
           tag === editingTag.original ? editingTag.new : tag
         );
         
-        const { error } = await supabase
-          .from('entries')
-          .update({ tags: updatedTags })
-          .eq('id', entry.id);
+        const { error } = await updateEntry(entry.id, { tags: updatedTags });
         
         if (error) throw error;
       }
