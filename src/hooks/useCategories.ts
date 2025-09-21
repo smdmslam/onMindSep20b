@@ -1,21 +1,18 @@
 import { useState, useCallback } from 'react';
 import { toast } from 'react-hot-toast';
-import { createEntry, updateEntry, auth } from '../lib/firebase-client';
+import { updateEntry } from '../lib/firebase-client';
 import type { Entry } from '../lib/firebase-client';
 import { DEFAULT_CATEGORIES } from '../lib/constants';
 
 export function useCategories(entries: Entry[], onEntriesChange: () => void) {
   const [selectedCategory, setSelectedCategory] = useState<string>('');
 
-  // Get existing categories from entries, filtering out any numeric placeholders
+  // Get existing categories from entries (same approach as tags)
   const existingCategories = Array.from(
     new Set(entries.map(entry => entry.category))
-  ).filter(cat => !cat.match(/^\(\d+\)$/));
-
-  // Combine default and custom categories
-  const allCategories = Array.from(
-    new Set([...DEFAULT_CATEGORIES, ...existingCategories])
   ).sort();
+
+  // Note: Categories are discovered dynamically like tags - no need to create placeholder entries
 
   const deleteCategory = useCallback(async (categoryToDelete: string, replacementCategory: string) => {
     try {
@@ -49,36 +46,7 @@ export function useCategories(entries: Entry[], onEntriesChange: () => void) {
     }
   }, [entries, selectedCategory, onEntriesChange]);
 
-  const addCategory = useCallback(async (newCategory: string) => {
-    try {
-      if (allCategories.includes(newCategory)) {
-        toast.error('This category already exists');
-        return false;
-      }
-
-      // Create a minimal entry to establish the category
-      const { error } = await createEntry({
-        title: 'Category Created',
-        content: ' ',
-        category: newCategory,
-        tags: ['system'],
-        is_favorite: false,
-        is_pinned: false,
-        is_flashcard: false,
-        explanation: null
-      });
-
-      if (error) throw error;
-
-      toast.success(`Category "${newCategory}" created successfully`);
-      onEntriesChange();
-      return true;
-    } catch (error) {
-      console.error('Error creating category:', error);
-      toast.error('Failed to create category');
-      return false;
-    }
-  }, [allCategories, onEntriesChange]);
+  // Categories are discovered automatically from entries - no need for explicit creation
 
   const renameCategory = useCallback(async (oldCategory: string, newCategory: string) => {
     try {
@@ -87,7 +55,7 @@ export function useCategories(entries: Entry[], onEntriesChange: () => void) {
         return false;
       }
 
-      if (allCategories.includes(newCategory)) {
+      if ([...DEFAULT_CATEGORIES, ...existingCategories].includes(newCategory)) {
         toast.error('This category name already exists');
         return false;
       }
@@ -116,15 +84,13 @@ export function useCategories(entries: Entry[], onEntriesChange: () => void) {
       toast.error('Failed to rename category');
       return false;
     }
-  }, [allCategories, selectedCategory, onEntriesChange]);
+  }, [existingCategories, selectedCategory, onEntriesChange]);
 
   return {
     selectedCategory,
     setSelectedCategory,
     existingCategories,
-    allCategories,
     deleteCategory,
-    addCategory,
     renameCategory
   };
 }

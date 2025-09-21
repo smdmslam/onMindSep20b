@@ -28,6 +28,7 @@ import { QuickNoteForm } from './components/QuickNoteForm';
 import { NoteForm } from './components/NoteForm';
 import { IdeaForm } from './components/IdeaForm';
 import { JournalForm } from './components/JournalForm';
+import { DEFAULT_CATEGORIES } from './lib/constants';
 
 type ViewMode = 'card' | 'row' | 'line';
 
@@ -62,9 +63,7 @@ function App() {
     selectedCategory,
     setSelectedCategory: setSelectedCategoryState,
     existingCategories,
-    allCategories,
     deleteCategory,
-    addCategory,
     renameCategory
   } = useCategories(entries, fetchEntries);
 
@@ -506,12 +505,11 @@ function App() {
               {interfacePreferences.showCategories && (
                 <div className="categories-section">
                   <CategoryFilters
-                    categories={allCategories}
+                    categories={[...DEFAULT_CATEGORIES, ...existingCategories]}
                     selectedCategory={selectedCategory}
                     onSelectCategory={setSelectedCategory}
                     entries={entries}
                     onDeleteCategory={deleteCategory}
-                    onAddCategory={addCategory}
                     onRenameCategory={renameCategory}
                   />
                 </div>
