@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react';
-import { ChevronDown, ChevronUp, Play, SkipBack, SkipForward, Pause, Volume2, VolumeX, RefreshCw, Volume1, Volume } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { ChevronDown, ChevronUp, Play, SkipBack, SkipForward, Pause, Volume2, VolumeX, RefreshCw, Volume1, Volume, X } from 'lucide-react';
+import { toast } from 'react-hot-toast';
 import YouTube from 'react-youtube';
 import type { Entry } from '../lib/firebase-client';
 import { extractYouTubeVideoId, extractVimeoVideoId, getVideoPlatform } from '../lib/metadata';
@@ -15,6 +16,9 @@ type VideoAccordionProps = {
   currentIndex?: number;
   onNextVideo?: () => void;
   onPreviousVideo?: () => void;
+  onUpdateEntry?: (id: string, updates: Partial<Entry>) => Promise<boolean>;
+  existingTags?: string[];
+  onEntryUpdated?: (updatedEntry: Entry) => void;
   interfacePreferences?: {
     showQuickNotes: boolean;
     showIdeas: boolean;
@@ -30,6 +34,9 @@ export function VideoAccordion({
   currentIndex = 0,
   onNextVideo,
   onPreviousVideo,
+  onUpdateEntry,
+  existingTags = [],
+  onEntryUpdated,
   interfacePreferences = {
     showQuickNotes: true,
     showIdeas: true,
@@ -45,8 +52,22 @@ export function VideoAccordion({
   const [progress, setProgress] = useState(0);
   const [duration, setDuration] = useState(0);
   
-  // Determine which video to show - current video or intro video as fallback
-  const displayVideo = currentVideo || INTRO_VIDEO;
+  // Tag management state
+  const [isAddingTag, setIsAddingTag] = useState(false);
+  const [newTagInput, setNewTagInput] = useState('');
+  const [filteredSuggestions, setFilteredSuggestions] = useState<string[]>([]);
+  const inputRef = useRef<HTMLInputElement>(null);
+  
+  // Local video state to handle updates
+  const [localVideo, setLocalVideo] = useState<Entry | null>(currentVideo);
+  
+  // Update local video when currentVideo changes
+  useEffect(() => {
+    setLocalVideo(currentVideo);
+  }, [currentVideo]);
+  
+  // Determine which video to show - local video or intro video as fallback
+  const displayVideo = localVideo || INTRO_VIDEO;
   const videoUrl = displayVideo.url || '';
   const videoPlatform = getVideoPlatform(videoUrl);
   const youtubeVideoId = videoPlatform === 'youtube' ? extractYouTubeVideoId(videoUrl) : null;
@@ -293,6 +314,104 @@ export function VideoAccordion({
   // Always show the video player (with intro video as fallback)
   const showingIntroVideo = !currentVideo;
 
+  // Tag management functions
+  const handleAddTagClick = () => {
+    setIsAddingTag(true);
+    setNewTagInput('');
+    setFilteredSuggestions([]);
+    setTimeout(() => inputRef.current?.focus(), 0);
+  };
+
+  const handleTagInputChange = (value: string) => {
+    setNewTagInput(value);
+    if (value.trim()) {
+      const suggestions = existingTags
+        .filter(tag => 
+          tag.toLowerCase().includes(value.toLowerCase()) &&
+          !(displayVideo.tags || []).includes(tag)
+        )
+        .slice(0, 5);
+      setFilteredSuggestions(suggestions);
+    } else {
+      setFilteredSuggestions([]);
+    }
+  };
+
+  const handleAddTag = async (tagToAdd: string) => {
+    if (!currentVideo || !onUpdateEntry || !tagToAdd.trim()) return;
+    
+    const trimmedTag = tagToAdd.trim();
+    const currentTags = displayVideo.tags || [];
+    if (currentTags.includes(trimmedTag)) {
+      toast.error('Tag already exists');
+      return;
+    }
+
+    try {
+      const updatedTags = [...currentTags, trimmedTag];
+      const success = await onUpdateEntry(currentVideo.id, { tags: updatedTags });
+      
+      if (success) {
+        // Update local video state immediately
+        if (localVideo) {
+          const updatedVideo = { ...localVideo, tags: updatedTags };
+          setLocalVideo(updatedVideo);
+          onEntryUpdated?.(updatedVideo);
+        }
+        
+        toast.success('Tag added successfully');
+        setIsAddingTag(false);
+        setNewTagInput('');
+        setFilteredSuggestions([]);
+      }
+    } catch (error) {
+      console.error('Error adding tag:', error);
+      toast.error('Failed to add tag');
+    }
+  };
+
+  const handleRemoveTag = async (tagToRemove: string) => {
+    if (!currentVideo || !onUpdateEntry) return;
+
+    try {
+      const updatedTags = (displayVideo.tags || []).filter(tag => tag !== tagToRemove);
+      const success = await onUpdateEntry(currentVideo.id, { tags: updatedTags });
+      
+      if (success) {
+        // Update local video state immediately
+        if (localVideo) {
+          const updatedVideo = { ...localVideo, tags: updatedTags };
+          setLocalVideo(updatedVideo);
+          onEntryUpdated?.(updatedVideo);
+        }
+        
+        toast.success('Tag removed successfully');
+      }
+    } catch (error) {
+      console.error('Error removing tag:', error);
+      toast.error('Failed to remove tag');
+    }
+  };
+
+  const handleTagInputKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      if (filteredSuggestions.length > 0) {
+        handleAddTag(filteredSuggestions[0]);
+      } else if (newTagInput.trim()) {
+        handleAddTag(newTagInput);
+      }
+    } else if (e.key === 'Escape') {
+      setIsAddingTag(false);
+      setNewTagInput('');
+      setFilteredSuggestions([]);
+    }
+  };
+
+  const handleSuggestionClick = (suggestion: string) => {
+    handleAddTag(suggestion);
+  };
+
   return (
     <div className="bg-[#1a1a1a]/50 border border-white/10 rounded-xl mb-6 overflow-hidden">
       <div className="flex items-center justify-between p-4">
@@ -483,11 +602,103 @@ export function VideoAccordion({
             <h3 className="text-lg text-white font-medium mb-2">
               {displayVideo.title}
             </h3>
+            
+            {/* Channel Info - Extract from tags if available */}
+            {!showingIntroVideo && displayVideo.tags && displayVideo.tags.length > 0 && (
+              <div className="text-sm text-white/60 mb-2">
+                Video by {displayVideo.tags.find(tag => 
+                  tag.toLowerCase().includes('cooking') || 
+                  tag.toLowerCase().includes('channel') ||
+                  tag === displayVideo.tags[0] // Fallback to first tag as potential channel
+                ) || displayVideo.tags[0]}
+              </div>
+            )}
+            
             {displayVideo.explanation && (
-              <div className="text-sm text-white/60">
+              <div className="text-sm text-white/60 mb-3">
                 {formatTextWithLinks(displayVideo.explanation)}
               </div>
             )}
+            
+            {/* Video Tags */}
+            {!showingIntroVideo && (
+              <div className="mb-3">
+                <div className="flex flex-wrap gap-1.5 items-center">
+                  {displayVideo.tags && displayVideo.tags.map((tag, index) => (
+                    <div
+                      key={index}
+                      className="group relative px-2 py-1 text-xs bg-blue-500/10 text-blue-300/80 hover:bg-blue-500/20 hover:text-blue-200 border border-blue-400/30 rounded-full transition-colors cursor-pointer flex items-center gap-1"
+                      title={`Filter by ${tag}`}
+                    >
+                      <span>{tag}</span>
+                      {currentVideo && onUpdateEntry && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleRemoveTag(tag);
+                          }}
+                          className="opacity-0 group-hover:opacity-100 ml-1 p-0.5 hover:bg-red-400/20 rounded-full transition-all"
+                          title="Remove tag"
+                        >
+                          <X size={10} className="text-red-400" />
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                  
+                  {/* Add Tag Button or Input */}
+                  {currentVideo && onUpdateEntry && (
+                    <div className="relative">
+                      {!isAddingTag ? (
+                        <button
+                          onClick={handleAddTagClick}
+                          className="px-2 py-1 text-xs bg-blue-500/10 text-blue-300/80 hover:bg-blue-500/20 hover:text-blue-200 border border-blue-400/30 rounded-full transition-colors cursor-pointer flex items-center gap-1"
+                          title="Add tag"
+                        >
+                          +
+                        </button>
+                      ) : (
+                        <div className="relative">
+                          <input
+                            ref={inputRef}
+                            type="text"
+                            value={newTagInput}
+                            onChange={(e) => handleTagInputChange(e.target.value)}
+                            onKeyDown={handleTagInputKeyDown}
+                            onBlur={() => {
+                              // Delay to allow suggestion click
+                              setTimeout(() => {
+                                setIsAddingTag(false);
+                                setNewTagInput('');
+                                setFilteredSuggestions([]);
+                              }, 150);
+                            }}
+                            className="px-2 py-1 text-xs bg-blue-500/10 text-blue-200 border border-blue-400/50 rounded-full focus:outline-none focus:border-blue-400 min-w-[100px]"
+                            placeholder="Add tag..."
+                          />
+                          
+                          {/* Tag Suggestions */}
+                          {filteredSuggestions.length > 0 && (
+                            <div className="absolute top-full left-0 mt-1 bg-[#1a1a1a] border border-white/20 rounded-lg shadow-lg z-10 min-w-[150px]">
+                              {filteredSuggestions.map((suggestion, index) => (
+                                <button
+                                  key={index}
+                                  onClick={() => handleSuggestionClick(suggestion)}
+                                  className="block w-full px-3 py-2 text-xs text-white/80 hover:bg-white/10 text-left first:rounded-t-lg last:rounded-b-lg transition-colors"
+                                >
+                                  {suggestion}
+                                </button>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+            
             {showingIntroVideo && (
               <div className="mt-3 p-3 bg-[#2d9edb]/10 border border-[#2d9edb]/20 rounded-lg">
                 <p className="text-sm text-[#2d9edb]">

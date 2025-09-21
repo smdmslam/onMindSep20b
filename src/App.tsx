@@ -467,6 +467,12 @@ function App() {
           currentIndex={playlistState?.currentIndex}
           onNextVideo={nextVideo}
           onPreviousVideo={previousVideo}
+          onUpdateEntry={updateEntry}
+          existingTags={existingTags}
+          onEntryUpdated={(updatedEntry) => {
+            // Update the current video with the new data
+            setCurrentVideo(updatedEntry);
+          }}
           interfacePreferences={interfacePreferences}
         />
 
