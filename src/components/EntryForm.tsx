@@ -38,7 +38,7 @@ export function EntryForm({
     content: '',
     explanation: '',
     url: '',
-    category: mode === 'flash' ? 'Flash Card' : mode === 'idea' ? 'Ideas' : mode === 'journal' ? 'Journal' : DEFAULT_CATEGORIES[0],
+    category: mode === 'flash' ? 'Flash Card' : 'General',
     tags: mode === 'flash' ? ['Flash Card'] : mode === 'idea' ? ['idea'] : mode === 'journal' ? ['Journal'] : [],
     mood: '' as Mood,
     customDate: new Date().toISOString().slice(0, 16) // Format: YYYY-MM-DDThh:mm

@@ -19,7 +19,7 @@ export function JournalForm({ onSubmit, onCancel, existingCategories, existingTa
   const [formData, setFormData] = useState({
     title: '',
     content: '',
-    category: 'Journal',
+    category: 'General',
     explanation: '',
     tags: 'Journal',
     is_favorite: false,

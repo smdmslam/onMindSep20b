@@ -29,7 +29,7 @@ export function QuickNoteForm({
     title: '',
     content: '',
     url: '',
-    category: 'Quick Note',
+    category: 'General',
     explanation: '',
     tags: 'Quick Note', // Initialize with Quick Note tag
     is_favorite: false,

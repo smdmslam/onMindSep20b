@@ -5,7 +5,8 @@ export const DEFAULT_CATEGORIES = [
   'Flash Card',
   'YouTube',
   'Code Vault',
-  'Reference'
+  'Reference',
+  'Uncategorized'
 ] as const;
 
 export type Category = string;

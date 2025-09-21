@@ -24,7 +24,9 @@ export function useEntryFiltering(
       const matchesCategory = selectedCategory
         ? selectedCategory === 'Favorites'
           ? entry.is_favorite
-          : entry.category === selectedCategory
+          : selectedCategory === 'All'
+            ? true // "All" category shows all entries
+            : entry.category === selectedCategory
         : true;
 
       const matchesTags = selectedTags.length > 0

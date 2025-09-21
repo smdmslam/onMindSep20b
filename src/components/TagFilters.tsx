@@ -62,8 +62,10 @@ export function TagFilters({
     const categoryEntries = selectedCategory
       ? selectedCategory === 'Favorites'
         ? entries.filter(entry => entry.is_favorite)
-        : entries.filter(entry => entry.category === selectedCategory)
-      : entries;
+        : selectedCategory === 'All'
+          ? entries // Show all entries for "All" category
+          : entries.filter(entry => entry.category === selectedCategory)
+      : []; // Show no entries (and thus no tags) when no category selected
 
     const tagFrequency = new Map<string, number>();
     categoryEntries.forEach(entry => {

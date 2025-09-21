@@ -29,7 +29,7 @@ export function NoteForm({
     title: '',
     content: '',
     url: '',
-    category: DEFAULT_CATEGORIES[0], // Default to first category
+    category: 'General', // Default to General for organization workflow
     explanation: '',
     tags: 'Note', // Initialize with Note tag
     is_favorite: false,

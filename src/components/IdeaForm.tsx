@@ -16,7 +16,7 @@ export function IdeaForm({ onSubmit, onCancel, existingCategories, existingTags,
   const [formData, setFormData] = useState({
     title: '',
     content: '',
-    category: 'Ideas',
+    category: 'General',
     explanation: '',
     tags: '',
     is_favorite: false,

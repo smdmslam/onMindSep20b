@@ -40,9 +40,16 @@ export function CategoryFilters({
   // Separate default and custom categories
   const customCategories = validCategories.filter(cat => !DEFAULT_CATEGORIES.includes(cat)).sort();
   
+  // Create categories list with "All" at the front, but hide "Uncategorized" for now
+  const allCategoriesList = ["All", ...DEFAULT_CATEGORIES.filter(cat => cat !== "Uncategorized"), ...customCategories];
+  
   // Count entries per category
-  const categoryCounts = [...DEFAULT_CATEGORIES, ...customCategories].reduce<Record<string, number>>((acc, category) => {
-    acc[category] = entries.filter(entry => entry.category === category).length;
+  const categoryCounts = allCategoriesList.reduce<Record<string, number>>((acc, category) => {
+    if (category === "All") {
+      acc[category] = entries.length; // All entries count
+    } else {
+      acc[category] = entries.filter(entry => entry.category === category).length;
+    }
     return acc;
   }, {});
 
@@ -233,75 +240,71 @@ export function CategoryFilters({
       )}
 
       <div className="flex flex-wrap gap-2">
-        {/* Default Categories */}
-        {DEFAULT_CATEGORIES.map((category) => (
-          <div key={category} className="flex items-center gap-1">
-            <button
-              onClick={() => handleCategoryClick(category)}
-              className={`px-3 py-1 text-sm rounded-full transition-colors ${
-                selectedCategory === category
-                  ? 'bg-white/20 text-white'
-                  : 'bg-white/10 text-white/60 hover:bg-white/20 hover:text-white'
-              }`}
-            >
-              {category} ({categoryCounts[category] || 0})
-            </button>
-          </div>
-        ))}
-
-        {/* Custom Categories */}
-        {customCategories.map((category) => (
-          <div key={category} className="flex items-center gap-1">
-            {editingCategory?.original === category ? (
-              <form onSubmit={handleRenameSubmit} className="flex items-center">
-                <input
-                  type="text"
-                  value={editingCategory.new}
-                  onChange={(e) => setEditingCategory({ ...editingCategory, new: e.target.value })}
-                  className="px-2 py-1 text-xs bg-black/30 border border-[#2d9edb] rounded-l-full text-white focus:outline-none w-32"
-                  autoFocus
-                />
-                <button
-                  type="submit"
-                  className="p-1 bg-[#2d9edb] text-white rounded-r-full hover:bg-[#2d9edb]/90 transition-colors"
-                >
-                  <Check size={12} />
-                </button>
-              </form>
-            ) : (
-              <div className="flex items-center gap-1">
+        {/* All Categories (including "All" at front) */}
+        {allCategoriesList.map((category) => {
+          const isAllCategory = category === "All";
+          const isGeneralCategory = category === "General"; // Style General as the functional uncategorized
+          const isDefaultCategory = DEFAULT_CATEGORIES.includes(category);
+          
+          return (
+            <div key={category} className="flex items-center gap-1">
+              {!isAllCategory && !isDefaultCategory && editingCategory?.original === category ? (
+                <form onSubmit={handleRenameSubmit} className="flex items-center">
+                  <input
+                    type="text"
+                    value={editingCategory.new}
+                    onChange={(e) => setEditingCategory({ ...editingCategory, new: e.target.value })}
+                    className="px-2 py-1 text-xs bg-black/30 border border-[#2d9edb] rounded-l-full text-white focus:outline-none w-32"
+                    autoFocus
+                  />
+                  <button
+                    type="submit"
+                    className="px-2 py-1 text-xs bg-[#2d9edb] text-white rounded-r-full hover:bg-[#2d9edb]/90"
+                  >
+                    <Check size={12} />
+                  </button>
+                </form>
+              ) : (
                 <button
                   onClick={() => handleCategoryClick(category)}
                   className={`px-3 py-1 text-sm rounded-full transition-colors ${
-                    selectedCategory === category
-                      ? 'bg-[#2d9edb] text-white'
-                      : 'bg-[#2d9edb]/20 text-[#2d9edb] hover:bg-[#2d9edb]/30'
+                    isGeneralCategory
+                      ? selectedCategory === category
+                        ? 'bg-blue-500/30 text-blue-200 border border-blue-400/50'
+                        : 'bg-blue-500/10 text-blue-300/80 hover:bg-blue-500/20 hover:text-blue-200 border border-blue-400/30'
+                      : selectedCategory === category
+                        ? 'bg-white/20 text-white'
+                        : 'bg-white/10 text-white/60 hover:bg-white/20 hover:text-white'
                   }`}
                 >
                   {category} ({categoryCounts[category] || 0})
                 </button>
-                {editMode === 'delete' && selectedCategory === category && !isDefaultCategory(category) && (
-                  <button
-                    onClick={() => handleDeleteClick(category)}
-                    className="p-1 text-red-400 hover:text-red-300 hover:bg-red-500/20 rounded-full transition-colors"
-                    title="Delete category"
-                  >
-                    <Trash2 size={12} />
-                  </button>
-                )}
-                {editMode === 'rename' && selectedCategory === category && !isDefaultCategory(category) && (
-                  <button
-                    onClick={() => handleStartRename(category)}
-                    className="p-1 text-[#2d9edb] hover:text-[#2d9edb]/80 hover:bg-[#2d9edb]/20 rounded-full transition-colors"
-                    title="Rename category"
-                  >
-                    <Edit2 size={12} />
-                  </button>
-                )}
-              </div>
-            )}
-          </div>
-        ))}
+              )}
+              
+              {/* Edit/Delete buttons for custom categories only */}
+              {!isAllCategory && !isGeneralCategory && !isDefaultCategory && editMode === 'rename' && editingCategory?.original !== category && (
+                <button
+                  onClick={() => handleStartRename(category)}
+                  className="p-1 text-white/40 hover:text-white hover:bg-white/10 rounded-full transition-colors"
+                  title="Rename category"
+                >
+                  <Edit2 size={12} />
+                </button>
+              )}
+              
+              {!isAllCategory && !isGeneralCategory && !isDefaultCategory && editMode === 'delete' && (
+                <button
+                  onClick={() => handleDeleteClick(category)}
+                  className="p-1 text-red-400 hover:text-red-300 hover:bg-red-400/10 rounded-full transition-colors"
+                  title="Delete category"
+                >
+                  <Trash2 size={12} />
+                </button>
+              )}
+            </div>
+          );
+        })}
+
       </div>
 
       {/* Delete Category Confirmation Dialog */}
