@@ -16,7 +16,8 @@ import {
 import { 
   signInWithEmailAndPassword, 
   createUserWithEmailAndPassword,
-  signInWithPopup,
+  signInWithRedirect,
+  getRedirectResult,
   GoogleAuthProvider,
   signOut as firebaseSignOut,
   onAuthStateChanged,
@@ -80,8 +81,10 @@ export async function signIn(email: string, password: string) {
 export async function signInWithGoogle() {
   try {
     const provider = new GoogleAuthProvider();
-    const userCredential = await signInWithPopup(auth, provider);
-    return { data: { user: convertFirebaseUser(userCredential.user) }, error: null };
+    await signInWithRedirect(auth, provider);
+    // The redirect will happen, so we don't return anything here
+    // The result will be handled by getRedirectResult in the auth state listener
+    return { data: null, error: null };
   } catch (error) {
     return { data: null, error };
   }
@@ -270,6 +273,20 @@ export async function getPinnedEntries(userId: string) {
     })) as Entry[];
     
     return { data: entries, error: null };
+  } catch (error) {
+    return { data: null, error };
+  }
+}
+
+// Handle redirect result
+export async function handleRedirectResult() {
+  try {
+    const result = await getRedirectResult(auth);
+    if (result) {
+      // User signed in via redirect
+      return { data: { user: convertFirebaseUser(result.user) }, error: null };
+    }
+    return { data: null, error: null };
   } catch (error) {
     return { data: null, error };
   }

@@ -58,6 +58,7 @@ export function AuthForm({ onSuccess }: AuthFormProps) {
       console.log('Starting Google sign-in process...');
       await signInWithGoogle();
       // The page will redirect to Google auth, so we don't need to call onSuccess here
+      // The loading state will be reset when the page redirects
     } catch (error) {
       console.error('Google auth error:', error);
       toast.error('Google sign in failed. Please try again.');
