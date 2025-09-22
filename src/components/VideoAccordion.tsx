@@ -699,13 +699,6 @@ export function VideoAccordion({
               </div>
             )}
             
-            {showingIntroVideo && (
-              <div className="mt-3 p-3 bg-[#2d9edb]/10 border border-[#2d9edb]/20 rounded-lg">
-                <p className="text-sm text-[#2d9edb]">
-                  👋 Welcome! This is your introduction to On Mind. Click play to learn about all the features available to you.
-                </p>
-              </div>
-            )}
           </div>
         </div>
       </div>
