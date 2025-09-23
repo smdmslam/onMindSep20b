@@ -5,7 +5,7 @@ import { getFirestore } from 'firebase/firestore';
 // Firebase configuration
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "AIzaSyDheNF1cZyK7Cue-FEXxInumgfiMkzr3Uo",
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || "onmind.cc",
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || "onmindsep20.firebaseapp.com",
   projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || "onmindsep20",
   storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || "onmindsep20.firebasestorage.app",
   messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || "690745713338",
