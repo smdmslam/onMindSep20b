@@ -61,7 +61,7 @@ export function SplashScreen({ onFinished, minDuration = 1500 }: SplashScreenPro
           and YouTube companion
         </p>
         <p className="text-sm text-white/40 mt-2 text-center">
-          v. 1.09.25
+          v. 1.09.25 (53e0d42)
         </p>
         
         <div className="mt-8">
