@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { X, Youtube, Loader2, Star, Pin, Globe } from 'lucide-react';
 import type { Entry } from '../lib/firebase-client';
 import { TagInput } from './TagInput';
@@ -42,6 +42,7 @@ export function QuickNoteForm({
   const [isYouTubeUrl, setIsYouTubeUrl] = useState(false);
   const [channelName, setChannelName] = useState<string | null>(null);
   const [showAdvancedFields, setShowAdvancedFields] = useState(false);
+  const titleInputRef = useRef<HTMLInputElement>(null);
 
   // Find the YouTube category from DEFAULT_CATEGORIES to ensure consistent casing
   const youTubeCategory = DEFAULT_CATEGORIES.find(cat => cat.toLowerCase() === 'youtube') || 'YouTube';
@@ -121,6 +122,18 @@ export function QuickNoteForm({
 
     fetchMetadataFromUrl();
   }, [formData.url, fetchMetadata, fetchWebMetadata, lastProcessedUrl, isYouTubeUrl, youtubeSettings.autoAddChannelAsTag]);
+
+  // Auto-focus title input when form mounts (for mobile compatibility)
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (titleInputRef.current) {
+        titleInputRef.current.focus();
+        titleInputRef.current.click();
+      }
+    }, 100);
+
+    return () => clearTimeout(timer);
+  }, []);
 
   const addChannelNameToTags = (channel: string, currentTags: string | string[]) => {
     if (!channel) return;
@@ -235,12 +248,14 @@ export function QuickNoteForm({
       
       <div className="mb-3">
         <input
+          ref={titleInputRef}
           type="text"
           value={formData.title}
           onChange={(e) => setFormData({ ...formData, title: e.target.value })}
           className="w-full px-3 py-2 bg-black/30 border border-white/10 rounded-lg text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-[#2d9edb]/50"
           placeholder="Title"
           required
+          autoFocus
         />
       </div>
 

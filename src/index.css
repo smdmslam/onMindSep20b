@@ -44,3 +44,38 @@ body {
 .splash-loading-bar {
   animation: loading 1.5s ease-in-out infinite;
 }
+
+/* Mobile form fixes */
+input, textarea, select {
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  font-size: 16px; /* Prevents iOS zoom */
+  touch-action: manipulation;
+  -webkit-touch-callout: none;
+  -webkit-user-select: text;
+  -moz-user-select: text;
+  -ms-user-select: text;
+  user-select: text;
+}
+
+/* Ensure form inputs are properly focusable on mobile */
+input:focus, textarea:focus, select:focus {
+  -webkit-tap-highlight-color: transparent;
+  outline: none;
+}
+
+/* Fix for iOS Safari input styling */
+input[type="text"], 
+input[type="email"], 
+input[type="url"], 
+input[type="password"], 
+input[type="search"], 
+input[type="tel"], 
+input[type="number"],
+textarea {
+  border-radius: 0;
+  -webkit-border-radius: 0;
+  -webkit-box-shadow: none;
+  box-shadow: none;
+}

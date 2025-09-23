@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { X, Star, Pin } from 'lucide-react';
 import type { Entry } from '../lib/firebase-client';
 import { TagInput } from './TagInput';
@@ -23,6 +23,7 @@ export function IdeaForm({ onSubmit, onCancel, existingCategories, existingTags,
     is_pinned: false
   });
   const [showAdvancedFields, setShowAdvancedFields] = useState(false);
+  const titleInputRef = useRef<HTMLInputElement>(null);
 
   // Combine default and custom categories
   const allCategories = Array.from(new Set([...DEFAULT_CATEGORIES, ...existingCategories])).sort();
@@ -52,6 +53,28 @@ export function IdeaForm({ onSubmit, onCancel, existingCategories, existingTags,
     }
   }, [entry]);
 
+  // Auto-focus title input when form mounts (for mobile compatibility)
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (titleInputRef.current) {
+        titleInputRef.current.focus();
+        // For mobile, we need to ensure the input is properly focused
+        titleInputRef.current.click();
+      }
+    }, 100); // Small delay to ensure DOM is ready
+
+    return () => clearTimeout(timer);
+  }, []);
+
+  // Debug touch events for mobile troubleshooting
+  const handleTouchStart = (e: React.TouchEvent) => {
+    console.log('Touch start detected on form input:', e.target);
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    console.log('Touch end detected on form input:', e.target);
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -73,7 +96,12 @@ export function IdeaForm({ onSubmit, onCancel, existingCategories, existingTags,
   };
 
   return (
-    <form onSubmit={handleSubmit} className="bg-[#1a1a1a]/50 border border-white/10 rounded-xl p-4">
+    <form 
+      onSubmit={handleSubmit} 
+      className="bg-[#1a1a1a]/50 border border-white/10 rounded-xl p-4"
+      style={{ position: 'relative', zIndex: 1 }}
+      onTouchStart={(e) => console.log('Form touch start:', e.target)}
+    >
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-3">
           <h3 className="text-lg font-medium text-white">
@@ -121,12 +149,16 @@ export function IdeaForm({ onSubmit, onCancel, existingCategories, existingTags,
       
       <div className="mb-3">
         <input
+          ref={titleInputRef}
           type="text"
           value={formData.title}
           onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
+          onTouchStart={handleTouchStart}
+          onTouchEnd={handleTouchEnd}
           className="w-full px-3 py-2 bg-black/30 border border-white/10 rounded-lg text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-[#2d9edb]/50"
           placeholder="Title"
           required
+          autoFocus
         />
       </div>
 
@@ -134,6 +166,8 @@ export function IdeaForm({ onSubmit, onCancel, existingCategories, existingTags,
         <textarea
           value={formData.content}
           onChange={(e) => setFormData(prev => ({ ...prev, content: e.target.value }))}
+          onTouchStart={handleTouchStart}
+          onTouchEnd={handleTouchEnd}
           className="w-full px-3 py-2 bg-black/30 border border-white/10 rounded-lg text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-[#2d9edb]/50 resize-none"
           placeholder="Content"
           rows={3}
